@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Меню Доставки</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+        @layer components {
+            .menu-category-title {
+                @apply text-4xl
+                text-black
+                tracking-tighter text-center border-b-[1.5px] mt-10 mb-5 pb-3;
+            }
+            .navelement {
+                @apply tracking-tighter text-xl text-gray-700 hover:text-[#597e52] font-medium p-2 rounded-md transition duration-150 ease-in-out border-x border-dashed;
+            }
+            .menu-category-card {
+                @apply border border-gray-300 p-6 rounded-lg
+            }
+            .menu-category-card-image{
+                @apply rounded-md w-full object-cover block h-40 bg-gray-100
+            }
+            .menu-category-card-text{
+                @apply text-2xl font-medium mb-2 tracking-tighter
+            }
+            .menu-category-card-text-desc{
+                @apply text-gray-700 mb-3 text-sm
+            }
+            .menu-category-card-parent{
+                @apply flex justify-between
+            }
+            .menu-category-card-parent-price{
+                @apply text-lg tracking-tighter text-2xl
+            }
+            .menu-category-card-parent-button{
+                @apply border rounded-md p-[2px] w-10 bg-[#597e52] text-white transition-transform duration-300 hover:scale-95
+            }
+        }
+
+
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Arial', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-white text-black font-sans">
+
+<div class="container mx-auto p-10 max-w-7xl">
+    <h1 class="text-5xl font-bold text-center mb-12 tracking-tighter">Меню</h1>
+
+    <div class="sticky top-0 z-10 bg-white shadow-md border-t">
+        <div class="container mx-auto max-w-7xl px-2"> <nav class="flex w-full justify-start md:justify-center overflow-x-auto overflow-y-none space-x-7 py-2">
+            <a href="#cat1" class="navelement">Пицца</a>
+            <a href="#cat2" class="navelement">Паста</a>
+            <a href="#cat3" class="navelement">Напитки</a>
+            <a href="#cat3" class="navelement">хуи</a>
+        </nav>
+        </div>
+    </div>
+    <section class="mb-12">
+        <h2 id="cat1" class="menu-category-title">Пицца</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+            <div class="menu-category-card">
+                <img alt="" src="src/images/photo_2025-10-18_23-47-09.jpg" class="menu-category-card-image">
+                <h3 class="menu-category-card-text">Маргарита</h3>
+                <p class="menu-category-card-text-desc">Томатный соус, моцарелла, свежий базилик, оливковое масло.</p>
+                <div class="menu-category-card-parent">
+                    <p class="menu-category-card-parent-price">550 ₽</p>
+                    <button class="menu-category-card-parent-button">+</button>
+                </div>
+            </div>
+
+            <div class="menu-category-card">
+                <img alt="" src="src/images/photo_2025-10-18_23-47-091.jpg" class="menu-category-card-image">
+                <h3 class="menu-category-card-text">Пепперони</h3>
+                <p class="menu-category-card-text-desc">Томатный соус, моцарелла, острая колбаска пепперони.</p>
+                <div class="menu-category-card-parent">
+                    <p class="menu-category-card-parent-price">550 ₽</p>
+                    <button class="menu-category-card-parent-button">+</button>
+                </div>
+
+            </div>
+
+            <div class="menu-category-card">
+                <img alt="" src="src/images/photo_2025-10-18_23-47-091.jpg" class="menu-category-card-image">
+                <h3 class="menu-category-card-text">Четыре Сыра</h3>
+                <p class="menu-category-card-text-desc">Сливочный соус, моцарелла, дорблю, пармезан, чеддер.</p>
+                <div class="menu-category-card-parent">
+                    <p class="menu-category-card-parent-price">550 ₽</p>
+                    <button class="menu-category-card-parent-button">+</button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="mb-12">
+        <h2 id="cat2" class=" menu-category-title">Паста</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+            <div class="menu-category-card">
+                <img alt="" src="src/images/photo_2025-10-18_23-47-091.jpg" class="menu-category-card-image">
+                <h3 class="menu-category-card-text">Карбонара</h3>
+                <p class="menu-category-card-text-desc">Спагетти, гуанчале, яичный желток, сыр пекорино романо, черный перец.</p>
+                <div class="menu-category-card-parent">
+                    <p class="menu-category-card-parent-price">550 ₽</p>
+                    <button class="menu-category-card-parent-button">+</button>
+                </div>
+            </div>
+
+            <div class="menu-category-card">
+                <img alt="" src="src/images/photo_2025-10-18_23-47-091.jpg" class="menu-category-card-image">
+                <h3 class="menu-category-card-text">Болоньезе</h3>
+                <p class="menu-category-card-text-desc">Тальятелле, мясной соус болоньезе (говядина, свинина, овощи), пармезан.</p>
+                <div class="menu-category-card-parent">
+                    <p class="menu-category-card-parent-price">550 ₽</p>
+                    <button class="menu-category-card-parent-button">+</button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section>
+        <h2 id="cat3" class="menu-category-title">Напитки</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+            <div class="menu-category-card">
+                <img alt="" src="src/images/photo_2025-10-18_23-47-091.jpg" class="menu-category-card-image">
+                <h3 class="menu-category-card-text">Лимонад</h3>
+                <p class="menu-category-card-text-desc">Домашний, 0.5л</p>
+                <div class="menu-category-card-parent">
+                    <p class="menu-category-card-parent-price">550 ₽</p>
+                    <button class="menu-category-card-parent-button">+</button>
+                </div>
+            </div>
+
+            <div class="menu-category-card">
+                <img alt="" src="src/images/photo_2025-10-18_23-47-091.jpg" class="menu-category-card-image">
+                <h3 class="menu-category-card-text">Морс</h3>
+                <p class="menu-category-card-text-desc">Клюквенный, 0.5л</p>
+                <div class="menu-category-card-parent">
+                    <p class="menu-category-card-parent-price">550 ₽</p>
+                    <button class="menu-category-card-parent-button">+</button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+</div> </body>
+</html>
