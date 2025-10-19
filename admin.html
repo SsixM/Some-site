@@ -15,6 +15,13 @@
                 /* Стили для активной кнопки вкладки */
                 @apply text-white bg-[#597e52] border-transparent;
             }
+            /* Новый класс для вкладок второго уровня */
+            .admin-sub-tab-button {
+                @apply text-lg text-gray-600 hover:text-[#597e52] font-medium p-2 rounded-md transition duration-150 ease-in-out border-b-2 border-transparent;
+            }
+            .admin-sub-tab-button.active {
+                @apply text-[#597e52] border-[#597e52];
+            }
             .admin-content-title {
                 /* Стили для заголовков разделов */
                 @apply text-4xl text-black tracking-tighter border-b-[1.5px] mt-10 mb-5 pb-3;
@@ -58,8 +65,7 @@
         <div class="container mx-auto max-w-7xl px-2">
             <nav id="admin-tabs" class="flex w-full justify-center overflow-x-auto space-x-4 py-2">
                 <button data-tab="orders" class="admin-tab-button active">Заказы</button>
-                <button data-tab="add-dish" class="admin-tab-button">Добавление блюд</button>
-                <button data-tab="create-links" class="admin-tab-button">Создание ссылок</button>
+                <button data-tab="dishes" class="admin-tab-button">Блюда</button> <button data-tab="create-links" class="admin-tab-button">Создание ссылок</button>
             </nav>
         </div>
     </div>
@@ -108,36 +114,64 @@
             </div>
         </section>
 
-        <section id="add-dish-content" data-tab-content class="space-y-6 hidden">
-            <h2 class="admin-content-title">Добавить Новое Блюдо</h2>
-            <form class="admin-card space-y-4">
-                <div>
-                    <label for="dish-name" class="block text-sm font-medium text-gray-700 mb-1">Название Блюда</label>
-                    <input type="text" id="dish-name" name="name" class="admin-input" placeholder="Например, Пицца Маргарита" required>
+        <section id="dishes-content" data-tab-content class="space-y-6 hidden">
+            <h2 class="admin-content-title">Управление Блюдами</h2>
+
+            <div id="admin-sub-tabs" class="flex space-x-6 border-b pb-2 mb-4">
+                <button data-sub-tab="add-dish" class="admin-sub-tab-button active">Добавить блюдо</button>
+                <button data-sub-tab="remove-dish" class="admin-sub-tab-button">Удалить блюдо</button>
+            </div>
+
+            <div id="sub-content-container">
+                <div id="add-dish-sub-content" data-sub-tab-content class="space-y-6">
+                    <form class="admin-card space-y-4">
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Добавление Нового Блюда</h3>
+                        <div>
+                            <label for="dish-name" class="block text-sm font-medium text-gray-700 mb-1">Название Блюда</label>
+                            <input type="text" id="dish-name" name="name" class="admin-input" placeholder="Например, Пицца Маргарита" required>
+                        </div>
+                        <div>
+                            <label for="dish-category" class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
+                            <select id="dish-category" name="category" class="admin-input" required>
+                                <option value="pizza">Пицца</option>
+                                <option value="pasta">Паста</option>
+                                <option value="drinks">Напитки</option>
+                                <option value="other">Другие</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="dish-description" class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
+                            <textarea id="dish-description" name="description" rows="3" class="admin-input" placeholder="Краткое описание блюда" required></textarea>
+                        </div>
+                        <div>
+                            <label for="dish-price" class="block text-sm font-medium text-gray-700 mb-1">Цена (₽)</label>
+                            <input type="number" id="dish-price" name="price" class="admin-input" placeholder="500" min="0" required>
+                        </div>
+                        <div>
+                            <label for="dish-image" class="block text-sm font-medium text-gray-700 mb-1">Изображение (URL)</label>
+                            <input type="url" id="dish-image" name="image" class="admin-input" placeholder="http://example.com/image.jpg">
+                        </div>
+                        <button type="submit" class="admin-submit-button w-full">Сохранить Блюдо</button>
+                    </form>
                 </div>
-                <div>
-                    <label for="dish-category" class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
-                    <select id="dish-category" name="category" class="admin-input" required>
-                        <option value="pizza">Пицца</option>
-                        <option value="pasta">Паста</option>
-                        <option value="drinks">Напитки</option>
-                        <option value="other">Другие</option>
-                    </select>
+
+                <div id="remove-dish-sub-content" data-sub-tab-content class="space-y-6 hidden">
+                    <div class="admin-card space-y-4">
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Удаление Блюда</h3>
+                        <div>
+                            <label for="dish-to-remove" class="block text-sm font-medium text-gray-700 mb-1">Выберите Блюдо для Удаления</label>
+                            <select id="dish-to-remove" name="dish-id" class="admin-input" required>
+                                <option value="" disabled selected>Выберите блюдо...</option>
+                                <option value="1">Пицца Маргарита (650 ₽)</option>
+                                <option value="2">Паста Карбонара (400 ₽)</option>
+                                <option value="3">Чизкейк Нью-Йорк (190 ₽)</option>
+                                <option value="4">Латте (200 ₽)</option>
+                            </select>
+                        </div>
+                        <button type="button" class="admin-submit-button w-full bg-red-600 hover:bg-red-700">Удалить Блюдо</button>
+                    </div>
                 </div>
-                <div>
-                    <label for="dish-description" class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
-                    <textarea id="dish-description" name="description" rows="3" class="admin-input" placeholder="Краткое описание блюда" required></textarea>
-                </div>
-                <div>
-                    <label for="dish-price" class="block text-sm font-medium text-gray-700 mb-1">Цена (₽)</label>
-                    <input type="number" id="dish-price" name="price" class="admin-input" placeholder="500" min="0" required>
-                </div>
-                <div>
-                    <label for="dish-image" class="block text-sm font-medium text-gray-700 mb-1">Изображение (URL)</label>
-                    <input type="url" id="dish-image" name="image" class="admin-input" placeholder="http://example.com/image.jpg">
-                </div>
-                <button type="submit" class="admin-submit-button w-full">Сохранить Блюдо</button>
-            </form>
+            </div>
         </section>
 
         <section id="create-links-content" data-tab-content class="space-y-6 hidden">
@@ -167,10 +201,18 @@
         const contentContainer = document.getElementById('admin-content-container');
         const tabButtons = tabsContainer.querySelectorAll('.admin-tab-button');
         const tabContents = contentContainer.querySelectorAll('[data-tab-content]');
-        const orderDetailsButtons = document.querySelectorAll('.order-details-toggle-button'); // Новая переменная для кнопок деталей заказа
+        const orderDetailsButtons = document.querySelectorAll('.order-details-toggle-button');
 
+        // Новые элементы для под-вкладок "Блюда"
+        const subTabsContainer = document.getElementById('admin-sub-tabs');
+        const subTabButtons = subTabsContainer ? subTabsContainer.querySelectorAll('.admin-sub-tab-button') : [];
+        const subTabContents = document.querySelectorAll('[data-sub-tab-content]');
+
+        /**
+         * Переключает основную вкладку административной панели.
+         * @param {string} targetTab - Идентификатор целевой вкладки (например, 'orders', 'dishes').
+         */
         function switchTab(targetTab) {
-            // Удаляем класс 'active' со всех кнопок и скрываем все содержимое
             tabButtons.forEach(button => {
                 button.classList.remove('active');
                 if (button.dataset.tab === targetTab) {
@@ -182,6 +224,18 @@
                 content.classList.add('hidden');
                 if (content.id === `${targetTab}-content`) {
                     content.classList.remove('hidden');
+
+                    // Дополнительная логика для вкладки "Блюда" (dishes)
+                    if (targetTab === 'dishes') {
+                        // Убедиться, что активна одна из под-вкладок, если они существуют
+                        if (subTabButtons.length > 0) {
+                            // Выбираем активную под-вкладку (по умолчанию 'add-dish')
+                            const activeSubTab = Array.from(subTabButtons).find(btn => btn.classList.contains('active')) || subTabButtons[0];
+                            if (activeSubTab) {
+                                switchSubTab(activeSubTab.dataset.subTab);
+                            }
+                        }
+                    }
                 }
             });
         }
@@ -192,6 +246,37 @@
                 switchTab(button.dataset.tab);
             }
         });
+
+        /**
+         * Переключает под-вкладку в разделе "Блюда".
+         * @param {string} targetSubTab - Идентификатор целевой под-вкладки (например, 'add-dish', 'remove-dish').
+         */
+        function switchSubTab(targetSubTab) {
+            subTabButtons.forEach(button => {
+                button.classList.remove('active');
+                if (button.dataset.subTab === targetSubTab) {
+                    button.classList.add('active');
+                }
+            });
+
+            subTabContents.forEach(content => {
+                content.classList.add('hidden');
+                if (content.id === `${targetSubTab}-sub-content`) {
+                    content.classList.remove('hidden');
+                }
+            });
+        }
+
+        // Добавляем слушатель событий для под-вкладок
+        if (subTabsContainer) {
+            subTabsContainer.addEventListener('click', (event) => {
+                const button = event.target.closest('.admin-sub-tab-button');
+                if (button) {
+                    switchSubTab(button.dataset.subTab);
+                }
+            });
+        }
+
 
         // Функция для переключения видимости деталей заказа
         function toggleOrderDetails(button) {
@@ -218,8 +303,10 @@
             });
         });
 
-        // Инициализация: отображаем первую вкладку (Заказы)
-        // switchTab('orders'); // Убираем, так как уже задано в разметке
+        // Инициализация: отображаем активную основную вкладку.
+        // Логика переключения под-вкладок вынесена в switchTab,
+        // поэтому при загрузке страницы, если активна вкладка "Блюда",
+        // автоматически активируется первая под-вкладка "Добавить блюдо".
     });
 </script>
 
