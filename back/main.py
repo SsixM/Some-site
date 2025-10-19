@@ -48,6 +48,7 @@ def get_menu():
         if cat not in categories:
             categories[cat] = []
         categories[cat].append({
+            'id': item['id'],
             'name': item['name'],
             'description': item['description'],
             'price': item['price'],

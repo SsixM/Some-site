@@ -118,11 +118,23 @@
         const button = document.createElement('button');
         button.className = 'menu-category-card-parent-button';
         button.textContent = '+';
+        button.onclick = () => addToCart(item);
         parent.appendChild(button);
 
         card.appendChild(parent);
 
         return card;
+    }
+
+    function addToCart(item) {
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const existing = cart.find(i => i.id === item.id);
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            cart.push({ ...item, quantity: 1 });
+        }
+        localStorage.setItem('cart', JSON.stringify(cart));
     }
 
     async function loadMenu() {

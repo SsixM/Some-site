@@ -7,17 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style type="text/tailwindcss">
         @layer components {
-            /* Переиспользуемые стили из index.html для сохранения дизайна */
             .menu-category-title {
                 @apply text-4xl
                 text-black
                 tracking-tighter text-center border-b-[1.5px] mt-10 mb-5 pb-3;
             }
             .navelement {
-                /* Используется для навигации, если она нужна (например, ссылка "Назад в Меню") */
                 @apply tracking-tighter text-xl text-gray-700 hover:text-[#597e52] font-medium p-2 rounded-md transition duration-150 ease-in-out border-x border-dashed;
             }
-            /* Новые стили для элементов корзины */
             .cart-item-image {
                 @apply w-20 h-20 object-cover rounded-md flex-shrink-0 bg-gray-100;
             }
@@ -59,54 +56,6 @@
             <h2 class="menu-category-title !text-left !text-3xl !mt-0 border-b-[2px]">Товары</h2>
 
             <div id="cart-items-list" class="space-y-6">
-
-                <div class="flex items-center p-4 border border-gray-200 rounded-lg shadow-sm transition duration-150 hover:shadow-md">
-                    <img src="src/images/pizza_example.jpg" alt="Пицца Пепперони" class="cart-item-image">
-
-                    <div class="flex-grow mx-6">
-                        <p class="cart-item-name">Пицца Пепперони (35см)</p>
-                        <p class="text-gray-500 text-sm">Сыр моцарелла, пепперони, томатный соус.</p>
-                        <p class="text-lg font-medium text-gray-700 mt-1">599 ₽</p> </div>
-
-                    <div class="flex items-center space-x-3 flex-shrink-0 mr-6">
-                        <button class="cart-quantity-button">-</button>
-                        <span class="text-xl font-medium">1</span>
-                        <button class="cart-quantity-button">+</button>
-                    </div>
-
-                    <p class="cart-item-price-total flex-shrink-0">599 ₽</p>
-
-                    <button class="ml-4 text-red-500 hover:text-red-700 transition duration-150">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                <div class="flex items-center p-4 border border-gray-200 rounded-lg shadow-sm transition duration-150 hover:shadow-md">
-                    <img src="src/images/pasta_example.jpg" alt="Паста Карбонара" class="cart-item-image">
-
-                    <div class="flex-grow mx-6">
-                        <p class="cart-item-name">Паста Карбонара</p>
-                        <p class="text-gray-500 text-sm">Спагетти, бекон, сливки, пармезан.</p>
-                        <p class="text-lg font-medium text-gray-700 mt-1">600 ₽</p>
-                    </div>
-
-                    <div class="flex items-center space-x-3 flex-shrink-0 mr-6">
-                        <button class="cart-quantity-button">-</button>
-                        <span class="text-xl font-medium">2</span>
-                        <button class="cart-quantity-button">+</button>
-                    </div>
-
-                    <p class="cart-item-price-total flex-shrink-0">1200 ₽</p>
-
-                    <button class="ml-4 text-red-500 hover:text-red-700 transition duration-150">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
             </div>
         </div>
 
@@ -117,7 +66,7 @@
             <div class="space-y-3 mb-6">
                 <div class="flex justify-between text-xl tracking-tighter">
                     <p class="text-gray-700">Подытог товаров:</p>
-                    <p class="font-medium">1799 ₽</p>
+                    <p id="subtotal" class="font-medium">0 ₽</p>
                 </div>
                 <div class="flex justify-between text-xl tracking-tighter">
                     <p class="text-gray-700">Доставка:</p>
@@ -132,7 +81,7 @@
             <div class="pt-4 border-t-2 border-dashed border-gray-300">
                 <div class="flex justify-between text-3xl font-bold tracking-tighter text-black">
                     <p>Итого к оплате:</p>
-                    <p class="text-[#597e52]">1898 ₽</p>
+                    <p id="total" class="text-[#597e52]">0 ₽</p>
                 </div>
             </div>
 
@@ -148,6 +97,130 @@
 
     </div>
 </div>
+
+<script>
+    function createCartItem(item) {
+        const div = document.createElement('div');
+        div.className = 'flex items-center p-4 border border-gray-200 rounded-lg shadow-sm transition duration-150 hover:shadow-md';
+        div.dataset.id = item.id;
+
+        const img = document.createElement('img');
+        img.src = item.image || 'src/images/placeholder.jpg';
+        img.alt = item.name;
+        img.className = 'cart-item-image';
+        div.appendChild(img);
+
+        const info = document.createElement('div');
+        info.className = 'flex-grow mx-6';
+
+        const name = document.createElement('p');
+        name.className = 'cart-item-name';
+        name.textContent = item.name;
+        info.appendChild(name);
+
+        const desc = document.createElement('p');
+        desc.className = 'text-gray-500 text-sm';
+        desc.textContent = item.description;
+        info.appendChild(desc);
+
+        const price = document.createElement('p');
+        price.className = 'text-lg font-medium text-gray-700 mt-1';
+        price.textContent = `${item.price} ₽`;
+        info.appendChild(price);
+
+        div.appendChild(info);
+
+        const quantityDiv = document.createElement('div');
+        quantityDiv.className = 'flex items-center space-x-3 flex-shrink-0 mr-6';
+
+        const minus = document.createElement('button');
+        minus.className = 'cart-quantity-button';
+        minus.textContent = '-';
+        minus.onclick = () => updateQuantity(item.id, -1);
+        quantityDiv.appendChild(minus);
+
+        const qtySpan = document.createElement('span');
+        qtySpan.className = 'text-xl font-medium';
+        qtySpan.textContent = item.quantity;
+        quantityDiv.appendChild(qtySpan);
+
+        const plus = document.createElement('button');
+        plus.className = 'cart-quantity-button';
+        plus.textContent = '+';
+        plus.onclick = () => updateQuantity(item.id, 1);
+        quantityDiv.appendChild(plus);
+
+        div.appendChild(quantityDiv);
+
+        const totalPrice = document.createElement('p');
+        totalPrice.className = 'cart-item-price-total flex-shrink-0';
+        totalPrice.textContent = `${item.price * item.quantity} ₽`;
+        div.appendChild(totalPrice);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'ml-4 text-red-500 hover:text-red-700 transition duration-150';
+        removeBtn.onclick = () => removeItem(item.id);
+
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.className = 'h-6 w-6';
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('stroke', 'currentColor');
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+        svg.appendChild(path);
+
+        removeBtn.appendChild(svg);
+        div.appendChild(removeBtn);
+
+        return div;
+    }
+
+    function loadCart() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const list = document.getElementById('cart-items-list');
+        list.innerHTML = '';
+        cart.forEach(item => list.appendChild(createCartItem(item)));
+        updateTotals();
+    }
+
+    function updateQuantity(id, delta) {
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const item = cart.find(i => i.id === id);
+        if (item) {
+            item.quantity += delta;
+            if (item.quantity <= 0) {
+                cart = cart.filter(i => i.id !== id);
+            }
+            localStorage.setItem('cart', JSON.stringify(cart));
+            loadCart();
+        }
+    }
+
+    function removeItem(id) {
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        cart = cart.filter(i => i.id !== id);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        loadCart();
+    }
+
+    function updateTotals() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const delivery = 99;
+        const discount = 0;
+        const total = subtotal + delivery - discount;
+
+        document.getElementById('subtotal').textContent = `${subtotal} ₽`;
+        document.getElementById('total').textContent = `${total} ₽`;
+    }
+
+    window.addEventListener('DOMContentLoaded', loadCart);
+</script>
 
 </body>
 </html>
