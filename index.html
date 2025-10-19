@@ -128,7 +128,7 @@
 
     function addToCart(item) {
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        const existing = cart.find(i => i.name === item.name);
+        const existing = cart.find(i => i.id === item.id);
         if (existing) {
             existing.quantity += 1;
         } else {
