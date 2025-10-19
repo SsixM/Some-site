@@ -101,7 +101,6 @@
 
 <script>
     function createCartItem(item) {
-        // Изменено: flex-col по умолчанию, md:flex-row на средних экранах
         const div = document.createElement('div');
         div.className = 'flex flex-col items-start p-4 border border-gray-200 rounded-lg shadow-sm transition duration-150 hover:shadow-md md:flex-row md:items-center';
         div.dataset.id = item.id;
@@ -109,11 +108,10 @@
         const img = document.createElement('img');
         img.src = item.image || 'src/images/placeholder.jpg';
         img.alt = item.name;
-        img.className = 'cart-item-image mb-4 md:mb-0'; // Добавлен отступ снизу на мобильных
+        img.className = 'cart-item-image mb-4 md:mb-0';
         div.appendChild(img);
 
         const info = document.createElement('div');
-        // Изменено: flex-grow mx-6 заменено на flex-grow mt-4 md:mt-0 md:mx-6
         info.className = 'flex-grow mt-4 md:mt-0 md:mx-6 w-full';
 
         const name = document.createElement('p');
@@ -133,12 +131,10 @@
 
         div.appendChild(info);
 
-        // Общая обертка для контролов и кнопки удаления
         const controlsAndTotal = document.createElement('div');
-        controlsAndTotal.className = 'flex flex-row items-center justify-between w-full mt-4 pt-4 border-t md:flex-col md:w-auto md:border-t-0 md:pt-0 md:mt-0'; // Изменено для мобильных
+        controlsAndTotal.className = 'flex flex-row items-center justify-between w-full mt-4 pt-4 border-t md:flex-col md:w-auto md:border-t-0 md:pt-0 md:mt-0';
 
         const quantityDiv = document.createElement('div');
-        // Изменено: mr-6 убран
         quantityDiv.className = 'flex items-center space-x-3 flex-shrink-0';
 
         const minus = document.createElement('button');
@@ -161,11 +157,9 @@
         controlsAndTotal.appendChild(quantityDiv);
 
         const totalPrice = document.createElement('p');
-        // Изменено: классы для мобильного отображения
         totalPrice.className = 'cart-item-price-total flex-shrink-0 text-right';
         totalPrice.textContent = `${item.price * item.quantity} ₽`;
 
-        // Переместим общую цену рядом с контролами на мобильных и в отдельный блок на десктопе
         const totalAndRemoveContainer = document.createElement('div');
         totalAndRemoveContainer.className = 'flex flex-col items-end md:ml-4';
 
@@ -188,31 +182,25 @@
 
         removeBtn.appendChild(svg);
 
-        // Разделяем элементы на мобильных: Количество слева, Общая цена + Удалить справа
-
         const priceAndRemove = document.createElement('div');
         priceAndRemove.className = 'flex items-center space-x-4 mt-2 md:mt-0';
 
         priceAndRemove.appendChild(totalPrice);
         priceAndRemove.appendChild(removeBtn);
 
-        // Для мобильных, ставим кол-во и цену/удаление в одну линию (controlsAndTotal)
-        controlsAndTotal.classList.add('md:flex-row'); // Убедиться, что на мобильных будет flex-row
+        controlsAndTotal.classList.add('md:flex-row');
         controlsAndTotal.classList.remove('md:flex-col');
         controlsAndTotal.classList.add('justify-between', 'items-center', 'w-full', 'border-t', 'pt-4', 'mt-4');
 
-        controlsAndTotal.innerHTML = ''; // Очищаем
+        controlsAndTotal.innerHTML = '';
 
-        // Добавляем контролы кол-ва
         controlsAndTotal.appendChild(quantityDiv);
 
-        // Добавляем цену и кнопку удаления
         controlsAndTotal.appendChild(priceAndRemove);
 
         div.appendChild(controlsAndTotal);
 
-        // На десктопе (md и выше) используем старый макет
-        if (window.innerWidth >= 768) { // 768px - это md в Tailwind по умолчанию
+        if (window.innerWidth >= 768) {
             div.className = 'flex items-center p-4 border border-gray-200 rounded-lg shadow-sm transition duration-150 hover:shadow-md';
 
             controlsAndTotal.className = 'flex items-center space-x-3 flex-shrink-0 mr-6';
@@ -232,12 +220,7 @@
             removeBtn.className = 'ml-4 text-red-500 hover:text-red-700 transition duration-150';
             div.appendChild(removeBtn);
         } else {
-            // На мобильных (до md) мы уже подготовили div выше
-            // Нужно убрать лишние элементы, которые могут быть добавлены в info
-            // Оставляем логику в силе, просто убеждаемся в правильном порядке
-            // На мобильных `info` должен быть под картинкой, а `controlsAndTotal` - внизу.
             info.className = 'flex-grow mt-2 md:mt-0 md:mx-6 w-full';
-            // Удаляем цену из info, так как она будет в priceAndRemove
             info.removeChild(price);
         }
 
@@ -254,14 +237,15 @@
 
     function updateQuantity(id, delta) {
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        const item = cart.find(i => i.id === id);
-        if (item) {
-            item.quantity += delta;
-            if (item.quantity <= 0) {
-                cart = cart.filter(i => i.id !== id);
+        const itemIndex = cart.findIndex(i => i.id === id);
+        if (itemIndex !== -1) {
+            cart[itemIndex].quantity += delta;
+            if (cart[itemIndex].quantity <= 0) {
+                cart.splice(itemIndex, 1);
             }
             localStorage.setItem('cart', JSON.stringify(cart));
-            loadCart();
+            updateCartItemDisplay(id);
+            updateTotals();
         }
     }
 
@@ -269,7 +253,33 @@
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
         cart = cart.filter(i => i.id !== id);
         localStorage.setItem('cart', JSON.stringify(cart));
-        loadCart();
+        const div = document.querySelector(`[data-id="${id}"]`);
+        if (div) {
+            div.remove();
+        }
+        updateTotals();
+    }
+
+    function updateCartItemDisplay(id) {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const item = cart.find(i => i.id === id);
+        const div = document.querySelector(`[data-id="${id}"]`);
+        if (!div) return;
+
+        if (!item || item.quantity <= 0) {
+            div.remove();
+            return;
+        }
+
+        const qtySpan = div.querySelector('.text-xl.font-medium');
+        if (qtySpan) {
+            qtySpan.textContent = item.quantity;
+        }
+
+        const totalPrice = div.querySelector('.cart-item-price-total');
+        if (totalPrice) {
+            totalPrice.textContent = `${item.price * item.quantity} ₽`;
+        }
     }
 
     function updateTotals() {
@@ -283,7 +293,6 @@
         document.getElementById('total').textContent = `${total} ₽`;
     }
 
-    // Перезагрузка корзины при изменении размера экрана (для корректного переключения макета элемента)
     let resizeTimer;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);

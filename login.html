@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход</title>
+    <title>Вход в админ-панель</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style type="text/tailwindcss">
         @layer components {
@@ -15,6 +15,9 @@
             }
             .form-button {
                 @apply w-full bg-[#597e52] text-white py-3 rounded-md text-xl font-medium tracking-tighter hover:bg-[#4a6b44] transition duration-150 ease-in-out;
+            }
+            .error-message {
+                @apply text-red-500 text-sm mt-2 text-center;
             }
         }
     </style>
@@ -28,16 +31,42 @@
                 },
             },
         }
+        window.onload = function() {
+            const form = document.querySelector('form');
+            const errorMessage = document.getElementById('error-message');
+            
+            form.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                errorMessage.textContent = '';
+
+                const formData = new FormData(form);
+                try {
+                    const response = await fetch('http://127.0.0.1:3000/login', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        localStorage.setItem('token', data.token);
+                        window.location.href = 'file:///C:/Users/slava/Desktop/Defency/Some-site/admin.html';
+                    } else {
+                        errorMessage.textContent = data.error || 'Ошибка входа';
+                    }
+                } catch (error) {
+                    errorMessage.textContent = 'Ошибка соединения с сервером';
+                    console.error('Fetch error:', error);
+                }
+            });
+        }
     </script>
 </head>
 <body class="bg-white text-black font-sans min-h-screen flex items-center justify-center p-4">
 
 <div class="container mx-auto max-w-md">
-
-
     <div class="p-8 border border-gray-300 rounded-lg shadow-lg bg-white">
         <h1 class="text-5xl font-bold text-center mb-10 tracking-tighter">Вход</h1>
-        <form action="/login" method="POST">
+        <form>
             <div class="mb-6">
                 <label for="username" class="form-label">Имя пользователя</label>
                 <input type="text" id="username" name="username" required class="form-input">
@@ -47,6 +76,8 @@
                 <label for="password" class="form-label">Пароль</label>
                 <input type="password" id="password" name="password" required class="form-input">
             </div>
+
+            <div id="error-message" class="error-message"></div>
 
             <button type="submit" class="form-button">Войти</button>
         </form>
