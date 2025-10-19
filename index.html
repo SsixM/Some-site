@@ -61,7 +61,6 @@
                 <a href="#cat1" class="navelement">Пицца</a>
                 <a href="#cat2" class="navelement">Паста</a>
                 <a href="#cat3" class="navelement">Напитки</a>
-                <!-- Исправил опечатку в навигации, предполагая, что это была ошибка -->
                 <a href="#cat4" class="navelement">Другие</a>
             </nav>
         </div>
@@ -70,37 +69,31 @@
     <section class="mb-12">
         <h2 id="cat1" class="menu-category-title">Пицца</h2>
         <div id="pizza-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Карточки будут загружены динамически -->
         </div>
     </section>
 
     <section class="mb-12">
         <h2 id="cat2" class="menu-category-title">Паста</h2>
         <div id="pasta-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Карточки будут загружены динамически -->
         </div>
     </section>
 
     <section class="mb-12">
         <h2 id="cat3" class="menu-category-title">Напитки</h2>
         <div id="drinks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Карточки будут загружены динамически -->
         </div>
     </section>
-
-    <!-- Добавьте дополнительные секции, если нужно -->
 
 </div>
 
 <script>
-    // Функция для создания карточки на основе данных
     function createMenuCard(item) {
         const card = document.createElement('div');
         card.className = 'menu-category-card';
 
         const img = document.createElement('img');
         img.alt = item.name || '';
-        img.src = item.image || 'src/images/placeholder.jpg'; // Замените на плейсхолдер, если нужно
+        img.src = item.image || 'src/images/placeholder.jpg';
         img.className = 'menu-category-card-image';
         card.appendChild(img);
 
@@ -132,37 +125,27 @@
         return card;
     }
 
-    // Функция для загрузки данных из локального JSON файла
     async function loadMenu() {
         try {
-            const response = await fetch('menu.json'); // Загружаем из локального файла menu.json
+            const response = await fetch('http://localhost:3000/api/menu');
             if (!response.ok) throw new Error('Ошибка загрузки меню');
             const data = await response.json();
 
-            // Предполагаем структуру данных из JSON: { categories: { pizza: [...], pasta: [...], drinks: [...] } }
             const { categories } = data;
 
-            // Загружаем пиццу
             const pizzaGrid = document.getElementById('pizza-grid');
             categories.pizza.forEach(item => pizzaGrid.appendChild(createMenuCard(item)));
 
-            // Загружаем пасту
             const pastaGrid = document.getElementById('pasta-grid');
             categories.pasta.forEach(item => pastaGrid.appendChild(createMenuCard(item)));
 
-            // Загружаем напитки
             const drinksGrid = document.getElementById('drinks-grid');
             categories.drinks.forEach(item => drinksGrid.appendChild(createMenuCard(item)));
-
-            // Добавьте обработку других категорий аналогично
-
         } catch (error) {
             console.error('Ошибка:', error);
-            // Можно добавить fallback или сообщение об ошибке
         }
     }
 
-    // Загружаем меню при загрузке страницы
     window.addEventListener('DOMContentLoaded', loadMenu);
 </script>
 
