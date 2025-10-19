@@ -37,8 +37,6 @@
                 @apply border rounded-md p-[2px] w-10 bg-[#597e52] text-white transition-transform duration-300 hover:scale-95
             }
         }
-
-
     </style>
     <script>
         tailwind.config = {
@@ -58,106 +56,115 @@
     <h1 class="text-5xl font-bold text-center mb-12 tracking-tighter">Меню</h1>
 
     <div class="sticky top-0 z-10 bg-white shadow-md border-t">
-        <div class="container mx-auto max-w-7xl px-2"> <nav class="flex w-full justify-start md:justify-center overflow-x-auto overflow-y-none space-x-7 py-2">
-            <a href="#cat1" class="navelement">Пицца</a>
-            <a href="#cat2" class="navelement">Паста</a>
-            <a href="#cat3" class="navelement">Напитки</a>
-            <a href="#cat3" class="navelement">хуи</a>
-        </nav>
+        <div class="container mx-auto max-w-7xl px-2"> 
+            <nav class="flex w-full justify-start md:justify-center overflow-x-auto overflow-y-none space-x-7 py-2">
+                <a href="#cat1" class="navelement">Пицца</a>
+                <a href="#cat2" class="navelement">Паста</a>
+                <a href="#cat3" class="navelement">Напитки</a>
+                <!-- Исправил опечатку в навигации, предполагая, что это была ошибка -->
+                <a href="#cat4" class="navelement">Другие</a>
+            </nav>
         </div>
     </div>
+    
     <section class="mb-12">
         <h2 id="cat1" class="menu-category-title">Пицца</h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-
-            <div class="menu-category-card">
-                <img alt="" src="src/images/photo_2025-10-18_23-47-09.jpg" class="menu-category-card-image">
-                <h3 class="menu-category-card-text">Маргарита</h3>
-                <p class="menu-category-card-text-desc">Томатный соус, моцарелла, свежий базилик, оливковое масло.</p>
-                <div class="menu-category-card-parent">
-                    <p class="menu-category-card-parent-price">550 ₽</p>
-                    <button class="menu-category-card-parent-button">+</button>
-                </div>
-            </div>
-
-            <div class="menu-category-card">
-                <img alt="" src="src/images/photo_2025-10-18_23-47-091.jpg" class="menu-category-card-image">
-                <h3 class="menu-category-card-text">Пепперони</h3>
-                <p class="menu-category-card-text-desc">Томатный соус, моцарелла, острая колбаска пепперони.</p>
-                <div class="menu-category-card-parent">
-                    <p class="menu-category-card-parent-price">550 ₽</p>
-                    <button class="menu-category-card-parent-button">+</button>
-                </div>
-
-            </div>
-
-            <div class="menu-category-card">
-                <img alt="" src="src/images/photo_2025-10-18_23-47-091.jpg" class="menu-category-card-image">
-                <h3 class="menu-category-card-text">Четыре Сыра</h3>
-                <p class="menu-category-card-text-desc">Сливочный соус, моцарелла, дорблю, пармезан, чеддер.</p>
-                <div class="menu-category-card-parent">
-                    <p class="menu-category-card-parent-price">550 ₽</p>
-                    <button class="menu-category-card-parent-button">+</button>
-                </div>
-            </div>
-
+        <div id="pizza-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Карточки будут загружены динамически -->
         </div>
     </section>
 
     <section class="mb-12">
-        <h2 id="cat2" class=" menu-category-title">Паста</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-
-            <div class="menu-category-card">
-                <img alt="" src="src/images/photo_2025-10-18_23-47-091.jpg" class="menu-category-card-image">
-                <h3 class="menu-category-card-text">Карбонара</h3>
-                <p class="menu-category-card-text-desc">Спагетти, гуанчале, яичный желток, сыр пекорино романо, черный перец.</p>
-                <div class="menu-category-card-parent">
-                    <p class="menu-category-card-parent-price">550 ₽</p>
-                    <button class="menu-category-card-parent-button">+</button>
-                </div>
-            </div>
-
-            <div class="menu-category-card">
-                <img alt="" src="src/images/photo_2025-10-18_23-47-091.jpg" class="menu-category-card-image">
-                <h3 class="menu-category-card-text">Болоньезе</h3>
-                <p class="menu-category-card-text-desc">Тальятелле, мясной соус болоньезе (говядина, свинина, овощи), пармезан.</p>
-                <div class="menu-category-card-parent">
-                    <p class="menu-category-card-parent-price">550 ₽</p>
-                    <button class="menu-category-card-parent-button">+</button>
-                </div>
-            </div>
-
+        <h2 id="cat2" class="menu-category-title">Паста</h2>
+        <div id="pasta-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Карточки будут загружены динамически -->
         </div>
     </section>
 
-    <section>
+    <section class="mb-12">
         <h2 id="cat3" class="menu-category-title">Напитки</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-
-            <div class="menu-category-card">
-                <img alt="" src="src/images/photo_2025-10-18_23-47-091.jpg" class="menu-category-card-image">
-                <h3 class="menu-category-card-text">Лимонад</h3>
-                <p class="menu-category-card-text-desc">Домашний, 0.5л</p>
-                <div class="menu-category-card-parent">
-                    <p class="menu-category-card-parent-price">550 ₽</p>
-                    <button class="menu-category-card-parent-button">+</button>
-                </div>
-            </div>
-
-            <div class="menu-category-card">
-                <img alt="" src="src/images/photo_2025-10-18_23-47-091.jpg" class="menu-category-card-image">
-                <h3 class="menu-category-card-text">Морс</h3>
-                <p class="menu-category-card-text-desc">Клюквенный, 0.5л</p>
-                <div class="menu-category-card-parent">
-                    <p class="menu-category-card-parent-price">550 ₽</p>
-                    <button class="menu-category-card-parent-button">+</button>
-                </div>
-            </div>
-
+        <div id="drinks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Карточки будут загружены динамически -->
         </div>
     </section>
 
-</div> </body>
+    <!-- Добавьте дополнительные секции, если нужно -->
+
+</div>
+
+<script>
+    // Функция для создания карточки на основе данных
+    function createMenuCard(item) {
+        const card = document.createElement('div');
+        card.className = 'menu-category-card';
+
+        const img = document.createElement('img');
+        img.alt = item.name || '';
+        img.src = item.image || 'src/images/placeholder.jpg'; // Замените на плейсхолдер, если нужно
+        img.className = 'menu-category-card-image';
+        card.appendChild(img);
+
+        const title = document.createElement('h3');
+        title.className = 'menu-category-card-text';
+        title.textContent = item.name;
+        card.appendChild(title);
+
+        const desc = document.createElement('p');
+        desc.className = 'menu-category-card-text-desc';
+        desc.textContent = item.description;
+        card.appendChild(desc);
+
+        const parent = document.createElement('div');
+        parent.className = 'menu-category-card-parent';
+
+        const price = document.createElement('p');
+        price.className = 'menu-category-card-parent-price';
+        price.textContent = `${item.price} ₽`;
+        parent.appendChild(price);
+
+        const button = document.createElement('button');
+        button.className = 'menu-category-card-parent-button';
+        button.textContent = '+';
+        parent.appendChild(button);
+
+        card.appendChild(parent);
+
+        return card;
+    }
+
+    // Функция для загрузки данных из локального JSON файла
+    async function loadMenu() {
+        try {
+            const response = await fetch('menu.json'); // Загружаем из локального файла menu.json
+            if (!response.ok) throw new Error('Ошибка загрузки меню');
+            const data = await response.json();
+
+            // Предполагаем структуру данных из JSON: { categories: { pizza: [...], pasta: [...], drinks: [...] } }
+            const { categories } = data;
+
+            // Загружаем пиццу
+            const pizzaGrid = document.getElementById('pizza-grid');
+            categories.pizza.forEach(item => pizzaGrid.appendChild(createMenuCard(item)));
+
+            // Загружаем пасту
+            const pastaGrid = document.getElementById('pasta-grid');
+            categories.pasta.forEach(item => pastaGrid.appendChild(createMenuCard(item)));
+
+            // Загружаем напитки
+            const drinksGrid = document.getElementById('drinks-grid');
+            categories.drinks.forEach(item => drinksGrid.appendChild(createMenuCard(item)));
+
+            // Добавьте обработку других категорий аналогично
+
+        } catch (error) {
+            console.error('Ошибка:', error);
+            // Можно добавить fallback или сообщение об ошибке
+        }
+    }
+
+    // Загружаем меню при загрузке страницы
+    window.addEventListener('DOMContentLoaded', loadMenu);
+</script>
+
+</body>
 </html>
