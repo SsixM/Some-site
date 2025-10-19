@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Корзина Доставки</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+        @layer components {
+            /* Переиспользуемые стили из index.html для сохранения дизайна */
+            .menu-category-title {
+                @apply text-4xl
+                text-black
+                tracking-tighter text-center border-b-[1.5px] mt-10 mb-5 pb-3;
+            }
+            .navelement {
+                /* Используется для навигации, если она нужна (например, ссылка "Назад в Меню") */
+                @apply tracking-tighter text-xl text-gray-700 hover:text-[#597e52] font-medium p-2 rounded-md transition duration-150 ease-in-out border-x border-dashed;
+            }
+            /* Новые стили для элементов корзины */
+            .cart-item-image {
+                @apply w-20 h-20 object-cover rounded-md flex-shrink-0 bg-gray-100;
+            }
+            .cart-item-name {
+                @apply text-xl font-medium tracking-tighter text-gray-800;
+            }
+            .cart-item-price-total {
+                @apply text-2xl font-bold tracking-tighter text-black;
+            }
+            .cart-quantity-button {
+                @apply w-8 h-8 text-2xl leading-none flex items-center justify-center border rounded-md text-gray-700 transition duration-150 hover:bg-gray-100;
+            }
+            .checkout-button {
+                @apply w-full py-4 text-2xl font-bold rounded-lg bg-[#597e52] text-white transition-transform duration-300 hover:scale-[0.99] tracking-tighter;
+            }
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Arial', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-white text-black font-sans">
+
+<div class="container mx-auto p-10 max-w-7xl">
+    <h1 class="text-5xl font-bold text-center mb-12 tracking-tighter">Корзина</h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+
+        <div class="lg:col-span-2">
+
+            <h2 class="menu-category-title !text-left !text-3xl !mt-0 border-b-[2px]">Товары</h2>
+
+            <div id="cart-items-list" class="space-y-6">
+
+                <div class="flex items-center p-4 border border-gray-200 rounded-lg shadow-sm transition duration-150 hover:shadow-md">
+                    <img src="src/images/pizza_example.jpg" alt="Пицца Пепперони" class="cart-item-image">
+
+                    <div class="flex-grow mx-6">
+                        <p class="cart-item-name">Пицца Пепперони (35см)</p>
+                        <p class="text-gray-500 text-sm">Сыр моцарелла, пепперони, томатный соус.</p>
+                        <p class="text-lg font-medium text-gray-700 mt-1">599 ₽</p> </div>
+
+                    <div class="flex items-center space-x-3 flex-shrink-0 mr-6">
+                        <button class="cart-quantity-button">-</button>
+                        <span class="text-xl font-medium">1</span>
+                        <button class="cart-quantity-button">+</button>
+                    </div>
+
+                    <p class="cart-item-price-total flex-shrink-0">599 ₽</p>
+
+                    <button class="ml-4 text-red-500 hover:text-red-700 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="flex items-center p-4 border border-gray-200 rounded-lg shadow-sm transition duration-150 hover:shadow-md">
+                    <img src="src/images/pasta_example.jpg" alt="Паста Карбонара" class="cart-item-image">
+
+                    <div class="flex-grow mx-6">
+                        <p class="cart-item-name">Паста Карбонара</p>
+                        <p class="text-gray-500 text-sm">Спагетти, бекон, сливки, пармезан.</p>
+                        <p class="text-lg font-medium text-gray-700 mt-1">600 ₽</p>
+                    </div>
+
+                    <div class="flex items-center space-x-3 flex-shrink-0 mr-6">
+                        <button class="cart-quantity-button">-</button>
+                        <span class="text-xl font-medium">2</span>
+                        <button class="cart-quantity-button">+</button>
+                    </div>
+
+                    <p class="cart-item-price-total flex-shrink-0">1200 ₽</p>
+
+                    <button class="ml-4 text-red-500 hover:text-red-700 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="lg:col-span-1 border border-gray-300 p-6 rounded-lg self-start sticky top-10 shadow-md">
+
+            <h2 class="text-3xl font-bold tracking-tighter mb-6 border-b pb-3">Итоги Заказа</h2>
+
+            <div class="space-y-3 mb-6">
+                <div class="flex justify-between text-xl tracking-tighter">
+                    <p class="text-gray-700">Подытог товаров:</p>
+                    <p class="font-medium">1799 ₽</p>
+                </div>
+                <div class="flex justify-between text-xl tracking-tighter">
+                    <p class="text-gray-700">Доставка:</p>
+                    <p class="font-medium text-[#597e52]">99 ₽</p>
+                </div>
+                <div class="flex justify-between text-xl tracking-tighter">
+                    <p class="text-gray-700">Скидка:</p>
+                    <p class="font-medium text-red-500">- 0 ₽</p>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t-2 border-dashed border-gray-300">
+                <div class="flex justify-between text-3xl font-bold tracking-tighter text-black">
+                    <p>Итого к оплате:</p>
+                    <p class="text-[#597e52]">1898 ₽</p>
+                </div>
+            </div>
+
+            <button class="checkout-button mt-8">
+                Перейти к оформлению
+            </button>
+
+            <div class="text-center mt-4">
+                <a href="index.html" class="navelement !border-none !p-0">← Продолжить покупки</a>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
