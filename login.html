@@ -49,7 +49,7 @@
 
                     if (response.ok) {
                         localStorage.setItem('token', data.token);
-                        window.location.href = 'file:///C:/Users/slava/Desktop/Defency/Some-site/admin.html';
+                        window.location.href = './admin.html';
                     } else {
                         errorMessage.textContent = data.error || 'Ошибка входа';
                     }
