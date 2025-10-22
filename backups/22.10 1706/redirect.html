@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Перенаправление</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+        .error-message {
+            @apply text-red-500 text-lg text-center mt-4;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Arial', 'sans-serif'],
+                    },
+                },
+            },
+        }
+        window.onload = async function() {
+            const errorMessage = document.getElementById('error-message');
+            const urlParams = new URLSearchParams(window.location.search);
+            const lots = urlParams.get('lots');
+
+            if (!lots) {
+                errorMessage.textContent = 'Номер столика не указан';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:3000/api/verify-table', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lots })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('tableNumber', lots);
+                    localStorage.setItem('tableTokenSavedAt', Date.now().toString());
+                    window.location.href = './index.html';
+                } else {
+                    errorMessage.textContent = data.error || 'Ошибка верификации номера столика';
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Ошибка соединения с сервером';
+                console.error('Fetch error:', error);
+            }
+        }
+    </script>
+</head>
+<body class="bg-white text-black font-sans min-h-screen flex items-center justify-center p-4">
+    <div class="container mx-auto max-w-md">
+        <h1 class="text-3xl font-bold text-center mb-4">Перенаправление...</h1>
+        <div id="error-message" class="error-message"></div>
+    </div>
+</body>
+</html>
