@@ -14,29 +14,37 @@
             .navelement {
                 @apply tracking-tighter text-xl text-gray-700 hover:text-[#597e52] font-medium p-2 rounded-md transition duration-150 ease-in-out border-x border-dashed;
             }
+            /* АДАПТАЦИЯ: уменьшаем отступы на мобильных */
+            .menu-category-grid{
+                @apply grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8
+            }
             .menu-category-card {
-                @apply border border-gray-300 p-6 rounded-lg;
+                @apply bg-white border border-gray-300 p-4 md:p-6 rounded-lg;
             }
             .menu-category-card-image {
-                @apply rounded-md w-full object-cover block h-40 bg-gray-100;
+                @apply rounded-md w-full object-cover block h-32 sm:h-40 bg-gray-100;
             }
             .menu-category-card-text {
-                @apply text-2xl font-medium mb-2 tracking-tighter;
+                @apply text-xl sm:text-2xl font-medium mb-2 tracking-tighter;
             }
+            /* АДАПТАЦИЯ: скрываем описание на мобильных */
             .menu-category-card-text-desc {
-                @apply text-gray-700 mb-3 text-sm;
+                @apply text-gray-700 mb-3 text-sm hidden sm:block;
             }
             .menu-category-card-parent {
                 @apply flex justify-between items-center;
             }
+            /* АДАПТАЦИЯ: уменьшаем цену на мобильных */
             .menu-category-card-parent-price {
-                @apply text-lg tracking-tighter text-2xl;
+                @apply text-xl md:text-2xl tracking-tighter;
             }
+            /* АДАПТАЦИЯ: уменьшаем кнопки на мобильных */
             .menu-category-card-parent-button {
-                @apply border rounded-md p-[2px] w-10 bg-[#597e52] text-white transition-transform duration-300 hover:scale-95 opacity-0;
+                @apply border rounded-md p-[2px] w-8 sm:w-10 bg-[#597e52] text-white transition-transform duration-300 hover:scale-95 opacity-0 text-base;
             }
+            /* АДАПТАЦИЯ: уменьшаем количество на мобильных */
             .menu-category-card-quantity {
-                @apply text-lg font-medium mx-2 opacity-0;
+                @apply text-base font-medium mx-2 opacity-0;
             }
             .menu-category-card-parent-button.visible,
             .menu-category-card-quantity.visible {
@@ -63,8 +71,8 @@
         }
     </script>
 </head>
-<body class="bg-white text-black font-sans">
-<div class="container mx-auto p-10 max-w-7xl">
+<body class="bg-[#f4eee1] text-black font-sans">
+<div class="container mx-auto p-4 sm:p-10 max-w-7xl">
     <h1 class="text-5xl font-bold text-center mb-12 tracking-tighter">Меню</h1>
 
     <div class="sticky top-0 z-10 bg-white shadow-md border-t">
@@ -80,19 +88,19 @@
 
     <section class="mb-12">
         <h2 id="cat1" class="menu-category-title">Пицца</h2>
-        <div id="pizza-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div id="pizza-grid" class="menu-category-grid">
         </div>
     </section>
 
     <section class="mb-12">
         <h2 id="cat2" class="menu-category-title">Паста</h2>
-        <div id="pasta-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div id="pasta-grid" class="menu-category-grid">
         </div>
     </section>
 
     <section class="mb-12">
         <h2 id="cat3" class="menu-category-title">Напитки</h2>
-        <div id="drinks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div id="drinks-grid" class="menu-category-grid">
         </div>
     </section>
 </div>
@@ -112,6 +120,7 @@
 <div id="notification-container"></div>
 
 <script>
+<<<<<<< Updated upstream
     function isTokenExpired(token) {
         if (!token) return true;
         const parts = token.split('.');
@@ -127,6 +136,55 @@
             return payload.exp < now;
         } catch (e) {
             return true;
+=======
+    function createMenuCard(item) {
+        const card = document.createElement('div');
+        card.className = 'menu-category-card';
+
+        const img = document.createElement('img');
+        img.alt = item.name || '';
+        img.src = item.image || 'src/images/placeholder.jpg';
+        img.className = 'menu-category-card-image';
+        card.appendChild(img);
+
+        const title = document.createElement('h3');
+        title.className = 'menu-category-card-text';
+        title.textContent = item.name;
+        card.appendChild(title);
+
+        const desc = document.createElement('p');
+        // АДАПТАЦИЯ: используем класс, чтобы скрыть описание на мобильных
+        desc.className = 'menu-category-card-text-desc';
+        desc.textContent = item.description;
+        card.appendChild(desc);
+
+        const parent = document.createElement('div');
+        parent.className = 'menu-category-card-parent';
+
+        const price = document.createElement('p');
+        price.className = 'menu-category-card-parent-price';
+        price.textContent = `${item.price} ₽`;
+        parent.appendChild(price);
+
+        const quantityContainer = document.createElement('div');
+        quantityContainer.className = 'flex items-center';
+        quantityContainer.id = `quantity-container-${item.id}`;
+
+        const quantity = getItemQuantity(item.id);
+        if (quantity > 0) {
+            const minusButton = document.createElement('button');
+            // ИЗМЕНЕНИЕ: Добавлен класс .minus-button
+            minusButton.className = 'menu-category-card-parent-button visible minus-button';
+            minusButton.textContent = '−';
+            minusButton.onclick = () => removeFromCart(item);
+            quantityContainer.appendChild(minusButton);
+
+            const quantitySpan = document.createElement('span');
+            quantitySpan.className = 'menu-category-card-quantity visible';
+            quantitySpan.id = `quantity-${item.id}`;
+            quantitySpan.textContent = quantity;
+            quantityContainer.appendChild(quantitySpan);
+>>>>>>> Stashed changes
         }
     }
 
