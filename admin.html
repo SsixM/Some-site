@@ -1,3 +1,4 @@
+<!-- Updated admin.html with auth check and redirect to index.html on invalid token -->
 <!DOCTYPE html>
 <html lang="ru" class="scroll-smooth">
 <head>
@@ -60,7 +61,6 @@
             const contentContainer = document.getElementById('admin-content-container');
             const tabButtons = tabsContainer.querySelectorAll('.admin-tab-button');
             const tabContents = contentContainer.querySelectorAll('[data-tab-content]');
-            const orderDetailsButtons = document.querySelectorAll('.order-details-toggle-button');
             const subTabsContainer = document.getElementById('admin-sub-tabs');
             const subTabButtons = subTabsContainer ? subTabsContainer.querySelectorAll('.admin-sub-tab-button') : [];
             const subTabContents = document.querySelectorAll('[data-sub-tab-content]');
@@ -74,194 +74,307 @@
             const tableLinkOutput = document.getElementById('table-link-output');
             const token = localStorage.getItem('token');
 
-            // Загрузка блюд для удаления
-            async function loadDishes() {
+            // Auth check at the beginning
+            async function checkAuth() {
                 try {
-                    const response = await fetch('http://127.0.0.1:3000/api/menu', {
+                    const response = await fetch('http://127.0.0.1:3000/api/orders', {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
-                    const data = await response.json();
-                    dishSelect.innerHTML = '<option value="" disabled selected>Выберите блюдо...</option>';
-                    for (const category in data.categories) {
-                        data.categories[category].forEach(dish => {
-                            const option = document.createElement('option');
-                            option.value = dish.id;
-                            option.textContent = `${dish.name} (${dish.price} ₽)`;
-                            dishSelect.appendChild(option);
-                        });
+                    if (!response.ok) {
+                        throw new Error('Invalid token');
                     }
                 } catch (error) {
-                    console.error('Error loading dishes:', error);
-                    removeDishMessage.textContent = 'Ошибка загрузки блюд';
-                    removeDishMessage.classList.add('error-message');
+                    localStorage.removeItem('token');
+                    window.location.href = './index.html';
+                    return false;
                 }
+                return true;
             }
 
-            // Обработка формы добавления блюда
-            addDishForm.addEventListener('submit', async function(event) {
-                event.preventDefault();
-                addDishMessage.textContent = '';
-                const formData = new FormData(addDishForm);
-                try {
-                    const response = await fetch('http://127.0.0.1:3000/api/add-dish', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` },
-                        body: formData
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        addDishMessage.textContent = data.message;
-                        addDishMessage.classList.add('success-message');
-                        addDishForm.reset();
-                    } else {
-                        addDishMessage.textContent = data.error || 'Ошибка добавления блюда';
-                        addDishMessage.classList.add('error-message');
-                    }
-                } catch (error) {
-                    addDishMessage.textContent = 'Ошибка соединения с сервером';
-                    addDishMessage.classList.add('error-message');
-                    console.error('Fetch error:', error);
-                }
-            });
+            if (!token) {
+                window.location.href = './login.html';
+                return;
+            }
 
-            // Обработка формы удаления блюда
-            removeDishForm.addEventListener('submit', async function(event) {
-                event.preventDefault();
-                removeDishMessage.textContent = '';
-                const formData = new FormData(removeDishForm);
-                try {
-                    const response = await fetch('http://127.0.0.1:3000/api/remove-dish', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` },
-                        body: formData
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        removeDishMessage.textContent = data.message;
-                        removeDishMessage.classList.add('success-message');
-                        dishSelect.value = '';
-                        loadDishes();
-                    } else {
-                        removeDishMessage.textContent = data.error || 'Ошибка удаления блюда';
+            (async () => {
+                const authValid = await checkAuth();
+                if (!authValid) return;
+
+                // Rest of the original code
+                // Загрузка блюд для удаления
+                async function loadDishes() {
+                    try {
+                        const response = await fetch('http://127.0.0.1:3000/api/menu', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        dishSelect.innerHTML = '<option value="" disabled selected>Выберите блюдо...</option>';
+                        for (const category in data.categories) {
+                            data.categories[category].forEach(dish => {
+                                const option = document.createElement('option');
+                                option.value = dish.id;
+                                option.textContent = `${dish.name} (${dish.price} ₽)`;
+                                dishSelect.appendChild(option);
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error loading dishes:', error);
+                        removeDishMessage.textContent = 'Ошибка загрузки блюд';
                         removeDishMessage.classList.add('error-message');
                     }
-                } catch (error) {
-                    removeDishMessage.textContent = 'Ошибка соединения с сервером';
-                    removeDishMessage.classList.add('error-message');
-                    console.error('Fetch error:', error);
                 }
-            });
 
-            // Обработка формы генерации ссылки для столика
-            tableLinkForm.addEventListener('submit', async function(event) {
-                event.preventDefault();
-                tableLinkMessage.textContent = '';
-                tableLinkOutput.value = '';
-                const formData = new FormData(tableLinkForm);
-                try {
-                    const response = await fetch('http://127.0.0.1:3000/api/generate-table-link', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` },
-                        body: formData
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        tableLinkOutput.value = data.link;
-                        tableLinkMessage.textContent = 'Ссылка успешно сгенерирована';
-                        tableLinkMessage.classList.add('success-message');
-                    } else {
-                        tableLinkMessage.textContent = data.error || 'Ошибка генерации ссылки';
-                        tableLinkMessage.classList.add('error-message');
+                // Загрузка заказов
+                async function loadOrders() {
+                    try {
+                        const response = await fetch('http://127.0.0.1:3000/api/orders', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        const ordersContainer = document.getElementById('orders-list');
+                        ordersContainer.innerHTML = '';
+                        data.orders.forEach(order => {
+                            const orderDiv = document.createElement('div');
+                            orderDiv.className = 'p-4 border rounded-md bg-gray-50 shadow-sm mb-4';
+                            orderDiv.innerHTML = `
+                                <p class="font-bold text-lg mb-1">Заказ #${order.id}</p>
+                                <p>Имя: ${order.user_name}</p>
+                                <p>Номер телефона: ${order.phone}</p>
+                                <p>Сумма: ${order.total} ₽</p>
+                                <p class="mb-2">Статус: <span class="${order.status === 'new' ? 'text-green-600' : order.status === 'in_progress' ? 'text-yellow-600' : 'text-red-600'} font-medium">${order.status === 'new' ? 'Новый' : order.status === 'in_progress' ? 'В процессе' : 'Закрыт'}</span></p>
+                                <button class="order-details-toggle-button" data-order-id="${order.id}">Показать детали</button>
+                                <div id="details-${order.id}" class="hidden mt-3 pt-3 border-t border-gray-200">
+                                    <p class="font-semibold mb-1">Состав заказа:</p>
+                                    <ul class="list-disc list-inside ml-2 text-sm text-gray-800 space-y-0.5">
+                                        ${order.items.map(item => `<li>${item.name} x ${item.quantity} - ${item.price * item.quantity} ₽</li>`).join('')}
+                                    </ul>
+                                </div>
+                            `;
+
+                            // Кнопки действий
+                            const actionsDiv = document.createElement('div');
+                            actionsDiv.className = 'mt-4 space-x-2';
+
+                            if (order.status === 'new') {
+                                const takeButton = document.createElement('button');
+                                takeButton.className = 'bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700';
+                                takeButton.textContent = 'Взять заказ';
+                                takeButton.onclick = () => takeOrder(order.id);
+                                actionsDiv.appendChild(takeButton);
+                            }
+
+                            if (order.status !== 'closed') {
+                                const closeButton = document.createElement('button');
+                                closeButton.className = 'bg-red-500 text-white p-2 rounded-md hover:bg-red-700';
+                                closeButton.textContent = 'Закрыть заказ';
+                                closeButton.onclick = () => closeOrder(order.id);
+                                actionsDiv.appendChild(closeButton);
+                            }
+
+                            orderDiv.appendChild(actionsDiv);
+                            ordersContainer.appendChild(orderDiv);
+
+                            // Toggle details
+                            const toggleButton = orderDiv.querySelector('.order-details-toggle-button');
+                            toggleButton.addEventListener('click', () => {
+                                const detailsDiv = document.getElementById(`details-${order.id}`);
+                                detailsDiv.classList.toggle('hidden');
+                                toggleButton.textContent = detailsDiv.classList.contains('hidden') ? 'Показать детали' : 'Скрыть детали';
+                            });
+                        });
+                    } catch (error) {
+                        console.error('Error loading orders:', error);
                     }
-                } catch (error) {
-                    tableLinkMessage.textContent = 'Ошибка соединения с сервером';
-                    tableLinkMessage.classList.add('error-message');
-                    console.error('Fetch error:', error);
                 }
-            });
 
-            // Переключение вкладок
-            function switchTab(targetTab) {
-                tabButtons.forEach(button => {
-                    button.classList.remove('active');
-                    if (button.dataset.tab === targetTab) {
-                        button.classList.add('active');
+                // Взять заказ
+                async function takeOrder(orderId) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:3000/api/take-order/${orderId}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            loadOrders();
+                        } else {
+                            alert(data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error taking order:', error);
+                    }
+                }
+
+                // Закрыть заказ
+                async function closeOrder(orderId) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:3000/api/close-order/${orderId}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            loadOrders();
+                        } else {
+                            alert(data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error closing order:', error);
+                    }
+                }
+
+                // Обработка формы добавления блюда
+                addDishForm.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    addDishMessage.textContent = '';
+                    const formData = new FormData(addDishForm);
+                    try {
+                        const response = await fetch('http://127.0.0.1:3000/api/add-dish', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            addDishMessage.textContent = data.message;
+                            addDishMessage.classList.add('success-message');
+                            addDishForm.reset();
+                        } else {
+                            addDishMessage.textContent = data.error || 'Ошибка добавления блюда';
+                            addDishMessage.classList.add('error-message');
+                        }
+                    } catch (error) {
+                        addDishMessage.textContent = 'Ошибка соединения с сервером';
+                        addDishMessage.classList.add('error-message');
+                        console.error('Fetch error:', error);
                     }
                 });
 
-                tabContents.forEach(content => {
-                    content.classList.add('hidden');
-                    if (content.id === `${targetTab}-content`) {
-                        content.classList.remove('hidden');
-                        if (targetTab === 'dishes') {
-                            const activeSubTab = Array.from(subTabButtons).find(btn => btn.classList.contains('active')) || subTabButtons[0];
-                            if (activeSubTab) {
-                                switchSubTab(activeSubTab.dataset.subTab);
+                // Обработка формы удаления блюда
+                removeDishForm.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    removeDishMessage.textContent = '';
+                    const formData = new FormData(removeDishForm);
+                    try {
+                        const response = await fetch('http://127.0.0.1:3000/api/remove-dish', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            removeDishMessage.textContent = data.message;
+                            removeDishMessage.classList.add('success-message');
+                            loadDishes();
+                        } else {
+                            removeDishMessage.textContent = data.error || 'Ошибка удаления блюда';
+                            removeDishMessage.classList.add('error-message');
+                        }
+                    } catch (error) {
+                        removeDishMessage.textContent = 'Ошибка соединения с сервером';
+                        removeDishMessage.classList.add('error-message');
+                        console.error('Fetch error:', error);
+                    }
+                });
+
+                // Обработка формы генерации ссылки для столика
+                tableLinkForm.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    tableLinkMessage.textContent = '';
+                    tableLinkOutput.value = '';
+                    const formData = new FormData(tableLinkForm);
+                    try {
+                        const response = await fetch('http://127.0.0.1:3000/api/generate-table-link', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            tableLinkOutput.value = data.link;
+                            tableLinkMessage.textContent = 'Ссылка успешно сгенерирована';
+                            tableLinkMessage.classList.add('success-message');
+                        } else {
+                            tableLinkMessage.textContent = data.error || 'Ошибка генерации ссылки';
+                            tableLinkMessage.classList.add('error-message');
+                        }
+                    } catch (error) {
+                        tableLinkMessage.textContent = 'Ошибка соединения с сервером';
+                        tableLinkMessage.classList.add('error-message');
+                        console.error('Fetch error:', error);
+                    }
+                });
+
+                // Переключение вкладок
+                function switchTab(targetTab) {
+                    tabButtons.forEach(button => {
+                        button.classList.remove('active');
+                        if (button.dataset.tab === targetTab) {
+                            button.classList.add('active');
+                        }
+                    });
+
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                        if (content.id === `${targetTab}-content`) {
+                            content.classList.remove('hidden');
+                            if (targetTab === 'dishes') {
+                                const activeSubTab = Array.from(subTabButtons).find(btn => btn.classList.contains('active')) || subTabButtons[0];
+                                if (activeSubTab) {
+                                    switchSubTab(activeSubTab.dataset.subTab);
+                                }
+                                if (activeSubTab.dataset.subTab === 'remove-dish') {
+                                    loadDishes();
+                                }
+                            } else if (targetTab === 'orders') {
+                                loadOrders();
                             }
-                            if (activeSubTab.dataset.subTab === 'remove-dish') {
+                        }
+                    });
+                }
+
+                tabsContainer.addEventListener('click', (event) => {
+                    const button = event.target.closest('.admin-tab-button');
+                    if (button) {
+                        switchTab(button.dataset.tab);
+                    }
+                });
+
+                function switchSubTab(targetSubTab) {
+                    subTabButtons.forEach(button => {
+                        button.classList.remove('active');
+                        if (button.dataset.subTab === targetSubTab) {
+                            button.classList.add('active');
+                        }
+                    });
+
+                    subTabContents.forEach(content => {
+                        content.classList.add('hidden');
+                        if (content.id === `${targetSubTab}-sub-content`) {
+                            content.classList.remove('hidden');
+                            if (targetSubTab === 'remove-dish') {
                                 loadDishes();
                             }
                         }
-                    }
-                });
-            }
-
-            tabsContainer.addEventListener('click', (event) => {
-                const button = event.target.closest('.admin-tab-button');
-                if (button) {
-                    switchTab(button.dataset.tab);
+                    });
                 }
-            });
 
-            function switchSubTab(targetSubTab) {
-                subTabButtons.forEach(button => {
-                    button.classList.remove('active');
-                    if (button.dataset.subTab === targetSubTab) {
-                        button.classList.add('active');
-                    }
-                });
-
-                subTabContents.forEach(content => {
-                    content.classList.add('hidden');
-                    if (content.id === `${targetSubTab}-sub-content`) {
-                        content.classList.remove('hidden');
-                        if (targetSubTab === 'remove-dish') {
-                            loadDishes();
+                if (subTabsContainer) {
+                    subTabsContainer.addEventListener('click', (event) => {
+                        const button = event.target.closest('.admin-sub-tab-button');
+                        if (button) {
+                            switchSubTab(button.dataset.subTab);
                         }
-                    }
-                });
-            }
-
-            if (subTabsContainer) {
-                subTabsContainer.addEventListener('click', (event) => {
-                    const button = event.target.closest('.admin-sub-tab-button');
-                    if (button) {
-                        switchSubTab(button.dataset.subTab);
-                    }
-                });
-            }
-
-            function toggleOrderDetails(button) {
-                const orderId = button.dataset.orderId;
-                const detailsDiv = document.getElementById(`details-${orderId}`);
-                if (detailsDiv) {
-                    detailsDiv.classList.toggle('hidden');
-                    button.textContent = detailsDiv.classList.contains('hidden') ? 'Показать детали' : 'Скрыть детали';
+                    });
                 }
-            }
 
-            orderDetailsButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    toggleOrderDetails(button);
+                // Инициализация
+                switchTab('orders');
+                document.getElementById('logout').addEventListener('click', async function() {
+                    localStorage.removeItem('token');
+                    window.location.href = './login.html';
                 });
-            });
-
-            // Инициализация
-            switchTab('orders');
-            document.getElementById('logout').addEventListener('click', async function() {
-                localStorage.removeItem('token');
-                window.location.href = './login.html';
-            });
+            })();
         }
     </script>
 </head>
@@ -284,35 +397,8 @@
         <section id="orders-content" data-tab-content class="space-y-6">
             <h2 class="admin-content-title">Актуальные Заказы</h2>
             <div class="admin-card space-y-4">
-                <p class="text-gray-700">Здесь будет таблица или список текущих заказов.</p>
-                <div class="p-4 border rounded-md bg-gray-50 shadow-sm">
-                    <p class="font-bold text-lg mb-1">Заказ #1001</p>
-                    <p>Номер телефона: +1234567890</p>
-                    <p>Сумма: 1250 ₽</p>
-                    <p class="mb-2">Статус: <span class="text-yellow-600 font-medium">В процессе</span></p>
-                    <button class="order-details-toggle-button" data-order-id="1001">Показать детали</button>
-                    <div id="details-1001" class="hidden mt-3 pt-3 border-t border-gray-200">
-                        <p class="font-semibold mb-1">Состав заказа:</p>
-                        <ul class="list-disc list-inside ml-2 text-sm text-gray-800 space-y-0.5">
-                            <li>Пицца Маргарита (30см) x 1 - 650 ₽</li>
-                            <li>Паста Карбонара x 1 - 400 ₽</li>
-                            <li>Кока-Кола (0.5л) x 2 - 200 ₽</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="p-4 border rounded-md bg-gray-50 shadow-sm">
-                    <p class="font-bold text-lg mb-1">Заказ #1002</p>
-                    <p>Клиент: Мария Петрова</p>
-                    <p>Сумма: 780 ₽</p>
-                    <p class="mb-2">Статус: <span class="text-green-600 font-medium">Новый</span></p>
-                    <button class="order-details-toggle-button" data-order-id="1002">Показать детали</button>
-                    <div id="details-1002" class="hidden mt-3 pt-3 border-t border-gray-200">
-                        <p class="font-semibold mb-1">Состав заказа:</p>
-                        <ul class="list-disc list-inside ml-2 text-sm text-gray-800 space-y-0.5">
-                            <li>Чизкейк Нью-Йорк x 2 - 380 ₽</li>
-                            <li>Латте x 2 - 400 ₽</li>
-                        </ul>
-                    </div>
+                <div id="orders-list" class="space-y-4">
+                    <!-- Динамические заказы будут здесь -->
                 </div>
             </div>
         </section>
