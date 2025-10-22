@@ -1,4 +1,3 @@
-<!-- Updated admin.html with auth check and redirect to index.html on invalid token -->
 <!DOCTYPE html>
 <html lang="ru" class="scroll-smooth">
 <head>
@@ -124,7 +123,6 @@
                         removeDishMessage.classList.add('error-message');
                     }
                 }
-<<<<<<< Updated upstream
 
                 // Загрузка заказов
                 async function loadOrders() {
@@ -186,58 +184,63 @@
                         });
                     } catch (error) {
                         console.error('Error loading orders:', error);
-=======
-            });
-            function GenerateQR(myUrl){
-                const img = document.getElementsByClassName('qr-code')[0];
-
-                QRCode.toDataURL(myUrl, function (error, dataUrl) {
-                    if (error) {
-                        console.error(error);
-                    } else {
-                        img.src = dataUrl;
-                        document.getElementsByClassName('qr-code-parent')[0].classList.remove('hidden');
-                        console.log('QR-код (img) успешно создан!');
-                    }
-                });
-            }
-            function DownloadQR() {
-
-                const img = document.getElementsByClassName('qr-code')[0].src;
-                const link = document.createElement('a');
-
-                link.href = img;
-                link.download = 'qr-code.png';
-                document.body.appendChild(link);
-
-                link.click();
-                document.body.removeChild(link);
-            }
-            document.getElementById('download-qr').addEventListener('click', DownloadQR)
-
-            tableLinkForm.addEventListener('submit', async function(event) {
-                event.preventDefault();
-                tableLinkMessage.textContent = '';
-                tableLinkOutput.value = '';
-                const formData = new FormData(tableLinkForm);
-                try {
-                    const response = await fetch('http://127.0.0.1:3000/api/generate-table-link', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` },
-                        body: formData
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        tableLinkOutput.value = data.link;
-                        GenerateQR(data.link);
-                        tableLinkMessage.textContent = 'Ссылка успешно сгенерирована';
-                        tableLinkMessage.classList.add('success-message');
-                    } else {
-                        tableLinkMessage.textContent = data.error || 'Ошибка генерации ссылки';
-                        tableLinkMessage.classList.add('error-message');
->>>>>>> Stashed changes
                     }
                 }
+
+                function GenerateQR(myUrl){
+                    const img = document.getElementsByClassName('qr-code')[0];
+
+                    QRCode.toDataURL(myUrl, function (error, dataUrl) {
+                        if (error) {
+                            console.error(error);
+                        } else {
+                            img.src = dataUrl;
+                            document.getElementsByClassName('qr-code-parent')[0].classList.remove('hidden');
+                            console.log('QR-код (img) успешно создан!');
+                        }
+                    });
+                }
+                function DownloadQR() {
+
+                    const img = document.getElementsByClassName('qr-code')[0].src;
+                    const link = document.createElement('a');
+
+                    link.href = img;
+                    link.download = 'qr-code.png';
+                    document.body.appendChild(link);
+
+                    link.click();
+                    document.body.removeChild(link);
+                }
+                document.getElementById('download-qr').addEventListener('click', DownloadQR)
+
+                tableLinkForm.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    tableLinkMessage.textContent = '';
+                    tableLinkOutput.value = '';
+                    const formData = new FormData(tableLinkForm);
+                    try {
+                        const response = await fetch('http://127.0.0.1:3000/api/generate-table-link', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            tableLinkOutput.value = data.link;
+                            GenerateQR(data.link);
+                            tableLinkMessage.textContent = 'Ссылка успешно сгенерирована';
+                            tableLinkMessage.classList.add('success-message');
+                        } else {
+                            tableLinkMessage.textContent = data.error || 'Ошибка генерации ссылки';
+                            tableLinkMessage.classList.add('error-message');
+                        }
+                    } catch (error) {
+                        tableLinkMessage.textContent = 'Ошибка соединения с сервером';
+                        tableLinkMessage.classList.add('error-message');
+                        console.error('Fetch error:', error);
+                    }
+                });
 
                 // Взять заказ
                 async function takeOrder(orderId) {
@@ -325,34 +328,6 @@
                     } catch (error) {
                         removeDishMessage.textContent = 'Ошибка соединения с сервером';
                         removeDishMessage.classList.add('error-message');
-                        console.error('Fetch error:', error);
-                    }
-                });
-
-                // Обработка формы генерации ссылки для столика
-                tableLinkForm.addEventListener('submit', async function(event) {
-                    event.preventDefault();
-                    tableLinkMessage.textContent = '';
-                    tableLinkOutput.value = '';
-                    const formData = new FormData(tableLinkForm);
-                    try {
-                        const response = await fetch('http://127.0.0.1:3000/api/generate-table-link', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` },
-                            body: formData
-                        });
-                        const data = await response.json();
-                        if (response.ok) {
-                            tableLinkOutput.value = data.link;
-                            tableLinkMessage.textContent = 'Ссылка успешно сгенерирована';
-                            tableLinkMessage.classList.add('success-message');
-                        } else {
-                            tableLinkMessage.textContent = data.error || 'Ошибка генерации ссылки';
-                            tableLinkMessage.classList.add('error-message');
-                        }
-                    } catch (error) {
-                        tableLinkMessage.textContent = 'Ошибка соединения с сервером';
-                        tableLinkMessage.classList.add('error-message');
                         console.error('Fetch error:', error);
                     }
                 });
@@ -452,7 +427,6 @@
             <h2 class="admin-content-title">Актуальные Заказы</h2>
             <div class="admin-card space-y-4">
                 <div id="orders-list" class="space-y-4">
-                    <!-- Динамические заказы будут здесь -->
                 </div>
             </div>
         </section>
