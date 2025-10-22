@@ -1,0 +1,445 @@
+<!-- Updated index.html with table token check and redirect to redirect.html on invalid/expired token -->
+<!doctype html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Меню Доставки</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+        @layer components {
+            .menu-category-title {
+                @apply text-4xl text-black tracking-tighter text-center border-b-[1.5px] mt-10 mb-5 pb-3;
+            }
+            .navelement {
+                @apply tracking-tighter text-xl text-gray-700 hover:text-[#597e52] font-medium p-2 rounded-md transition duration-150 ease-in-out border-x border-dashed;
+            }
+            .menu-category-card {
+                @apply border border-gray-300 p-6 rounded-lg;
+            }
+            .menu-category-card-image {
+                @apply rounded-md w-full object-cover block h-40 bg-gray-100;
+            }
+            .menu-category-card-text {
+                @apply text-2xl font-medium mb-2 tracking-tighter;
+            }
+            .menu-category-card-text-desc {
+                @apply text-gray-700 mb-3 text-sm;
+            }
+            .menu-category-card-parent {
+                @apply flex justify-between items-center;
+            }
+            .menu-category-card-parent-price {
+                @apply text-lg tracking-tighter text-2xl;
+            }
+            .menu-category-card-parent-button {
+                @apply border rounded-md p-[2px] w-10 bg-[#597e52] text-white transition-transform duration-300 hover:scale-95 opacity-0;
+            }
+            .menu-category-card-quantity {
+                @apply text-lg font-medium mx-2 opacity-0;
+            }
+            .menu-category-card-parent-button.visible,
+            .menu-category-card-quantity.visible {
+                @apply opacity-100;
+                transition: opacity 300ms ease-in;
+            }
+            .cart-notification {
+                @apply fixed right-5 w-[360px] h-[150px] bg-white/90 rounded-[15px] shadow-md p-2 backdrop-blur-md z-50 transition-all duration-300 ease-in-out opacity-0 translate-y-10;
+            }
+            .cart-notification.visible {
+                @apply opacity-100 translate-y-0;
+            }
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Arial', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-white text-black font-sans">
+<div class="container mx-auto p-10 max-w-7xl">
+    <h1 class="text-5xl font-bold text-center mb-12 tracking-tighter">Меню</h1>
+
+    <div class="sticky top-0 z-10 bg-white shadow-md border-t">
+        <div class="container mx-auto max-w-7xl px-2">
+            <nav class="flex w-full justify-start md:justify-center overflow-x-auto overflow-y-none space-x-7 py-2">
+                <a href="#cat1" class="navelement">Пицца</a>
+                <a href="#cat2" class="navelement">Паста</a>
+                <a href="#cat3" class="navelement">Напитки</a>
+                <a href="#cat4" class="navelement">Другие</a>
+            </nav>
+        </div>
+    </div>
+
+    <section class="mb-12">
+        <h2 id="cat1" class="menu-category-title">Пицца</h2>
+        <div id="pizza-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        </div>
+    </section>
+
+    <section class="mb-12">
+        <h2 id="cat2" class="menu-category-title">Паста</h2>
+        <div id="pasta-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        </div>
+    </section>
+
+    <section class="mb-12">
+        <h2 id="cat3" class="menu-category-title">Напитки</h2>
+        <div id="drinks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        </div>
+    </section>
+</div>
+<!-- Модальное окно подтверждения заказа -->
+<div id="order-success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+        <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <h2 class="text-2xl font-bold mb-2">Заказ оформлен!</h2>
+        <p class="text-gray-600 mb-6">Мы приняли ваш заказ. Ожидайте, скоро принесём!</p>
+        <button id="close-order-modal" class="px-6 py-3 bg-[#597e52] text-white font-bold rounded-lg hover:scale-95 transition">
+            Окей
+        </button>
+    </div>
+</div>
+<div id="notification-container"></div>
+
+<script>
+    function isTokenExpired(token) {
+        if (!token) return true;
+        const parts = token.split('.');
+        if (parts.length !== 3) return true;
+        try {
+            const payload = JSON.parse(atob(parts[1]));
+            const savedTime = localStorage.getItem('tableTokenSavedAt');
+            if (!savedTime) return true;
+            const tokenAgeMs = Date.now() - parseInt(savedTime, 10);
+            const oneDayMs = 24 * 60 * 60 * 1000;
+            if (tokenAgeMs > oneDayMs) return true;
+            const now = Math.floor(Date.now() / 1000);
+            return payload.exp < now;
+        } catch (e) {
+            return true;
+        }
+    }
+
+    const tableNumber = localStorage.getItem('tableNumber');
+    if (!tableNumber || isTokenExpired(tableNumber)) {
+        localStorage.removeItem('tableNumber');
+        window.location.href = './redirect.html';
+    } else {
+        // Original script continues here
+        function createMenuCard(item) {
+            const card = document.createElement('div');
+            card.className = 'menu-category-card';
+
+            const img = document.createElement('img');
+            img.alt = item.name || '';
+            img.src = item.image || 'src/images/placeholder.jpg';
+            img.className = 'menu-category-card-image';
+            card.appendChild(img);
+
+            const title = document.createElement('h3');
+            title.className = 'menu-category-card-text';
+            title.textContent = item.name;
+            card.appendChild(title);
+
+            const desc = document.createElement('p');
+            desc.className = 'menu-category-card-text-desc';
+            desc.textContent = item.description;
+            card.appendChild(desc);
+
+            const parent = document.createElement('div');
+            parent.className = 'menu-category-card-parent';
+
+            const price = document.createElement('p');
+            price.className = 'menu-category-card-parent-price';
+            price.textContent = `${item.price} ₽`;
+            parent.appendChild(price);
+
+            const quantityContainer = document.createElement('div');
+            quantityContainer.className = 'flex items-center';
+            quantityContainer.id = `quantity-container-${item.id}`;
+
+            const quantity = getItemQuantity(item.id);
+            if (quantity > 0) {
+                const minusButton = document.createElement('button');
+                minusButton.className = 'menu-category-card-parent-button visible minus-button';
+                minusButton.textContent = '−';
+                minusButton.onclick = () => removeFromCart(item);
+                quantityContainer.appendChild(minusButton);
+
+                const quantitySpan = document.createElement('span');
+                quantitySpan.className = 'menu-category-card-quantity visible';
+                quantitySpan.id = `quantity-${item.id}`;
+                quantitySpan.textContent = quantity;
+                quantityContainer.appendChild(quantitySpan);
+            }
+
+            const plusButton = document.createElement('button');
+            plusButton.className = 'menu-category-card-parent-button visible plus-button';
+            plusButton.textContent = '+';
+            plusButton.onclick = () => addToCart(item);
+            quantityContainer.appendChild(plusButton);
+
+            parent.appendChild(quantityContainer);
+
+            card.appendChild(parent);
+
+            return card;
+        }
+
+        function getItemQuantity(itemId) {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const item = cart.find(i => i.id === itemId);
+            return item ? item.quantity : 0;
+        }
+
+        function updateQuantityDisplay(item) {
+            const quantityContainer = document.getElementById(`quantity-container-${item.id}`);
+            if (!quantityContainer) return;
+
+            const quantity = getItemQuantity(item.id);
+            let minusButton = quantityContainer.querySelector('.minus-button');
+            let quantitySpan = document.getElementById(`quantity-${item.id}`);
+
+            if (quantity > 0) {
+                if (!minusButton) {
+                    minusButton = document.createElement('button');
+                    minusButton.className = 'menu-category-card-parent-button minus-button';
+                    minusButton.textContent = '−';
+                    minusButton.onclick = () => removeFromCart(item);
+                    quantityContainer.insertBefore(minusButton, quantityContainer.firstChild);
+                    setTimeout(() => minusButton.classList.add('visible'), 10);
+                }
+                if (!quantitySpan) {
+                    quantitySpan = document.createElement('span');
+                    quantitySpan.className = 'menu-category-card-quantity';
+                    quantitySpan.id = `quantity-${item.id}`;
+                    const plusButton = quantityContainer.querySelector('.plus-button');
+                    quantityContainer.insertBefore(quantitySpan, plusButton);
+                    setTimeout(() => quantitySpan.classList.add('visible'), 10);
+                }
+                quantitySpan.textContent = quantity;
+            } else {
+                if (minusButton) minusButton.remove();
+                if (quantitySpan) quantitySpan.remove();
+            }
+        }
+
+        function addToCart(item) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const existing = cart.find(i => i.id === item.id);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({ ...item, quantity: 1 });
+            }
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateQuantityDisplay(item);
+            showNotification(item);
+        }
+
+        function removeFromCart(item) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const existing = cart.find(i => i.id === item.id);
+            if (existing) {
+                existing.quantity -= 1;
+                if (existing.quantity <= 0) {
+                    cart = cart.filter(i => i.id !== item.id);
+                }
+                localStorage.setItem('cart', JSON.stringify(cart));
+                updateQuantityDisplay(item);
+                showNotification(item, true);
+            }
+        }
+
+        function updateNotificationPositions() {
+            const container = document.getElementById('notification-container');
+            const notifications = Array.from(container.children);
+            notifications.forEach((notification, index) => {
+                notification.style.bottom = `${index * 160 + 40}px`;
+            });
+        }
+
+        function showNotification(item, isRemoval = false) {
+            const container = document.getElementById('notification-container');
+
+            const notifications = container.children;
+            const currentCount = notifications.length;
+
+            const isMobile = window.innerWidth < 768;
+            const maxNotifications = isMobile ? 1 : 3;
+
+            let delay = 0;
+
+            if (currentCount >= maxNotifications) {
+                const oldestNotification = notifications[0];
+                if (oldestNotification) {
+                    hideNotification(oldestNotification.id);
+                    delay = 310;
+                }
+            }
+
+            setTimeout(() => {
+                const notificationId = `cart-notification-${Date.now()}-${Math.random()}`;
+
+                const notification = document.createElement('div');
+                notification.id = notificationId;
+                notification.className = 'cart-notification';
+
+                notification.style.bottom = `${container.childElementCount * 160 + 40}px`;
+
+                notification.innerHTML = `
+                    <div class="card-wrapper flex flex-nowrap items-center w-full">
+                        <div class="card-icon w-1/5">
+                            <div class="icon-cart-box bg-[#1a1a1a2f] w-12 h-12 rounded-full text-center p-3 mx-auto flex items-center justify-center">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    height="20"
+                                    width="20"
+                                    viewBox="0 0 576 512"
+                                    fill="#000"
+                                >
+                                    <path
+                                        d="M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0 -96z"
+                                    ></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="card-content w-4/5 pb-4">
+                            <div class="card-title-wrapper flex flex-nowrap items-baseline w-full">
+                                <span class="card-title w-[95%] text-base font-semibold text-[#1b1b1b] pt-5 pl-2.5">${isRemoval ? 'Удалено из корзины!' : 'Добавлено в корзину!'}</span>
+                                <span class="card-action w-[5%] text-right pr-7">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        height="15"
+                                        width="15"
+                                        viewBox="0 0 384 512"
+                                        class="cursor-pointer fill-black/20 transition-all duration-300 hover:fill-black/60"
+                                        onclick="hideNotification('${notificationId}')"
+                                    >
+                                        <path
+                                            d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"
+                                        ></path>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="product-name text-sm text-[#2c2c2c] pt-2.5 pl-2.5 cursor-pointer hover:underline">${item.name}</div>
+                            <div class="product-price text-base font-semibold text-[#333] pb-2.5 pl-2.5">${item.price} ₽</div>
+                            <button onclick="window.location.href='./cart.html'" class="button relative transition-all duration-300 shadow-xl py-2 px-4 bg-[#597e52] rounded-full flex items-center justify-center text-white gap-2.5 font-bold border-3 border-white/30 outline-none overflow-hidden text-base cursor-pointer h-9 ml-2.5">
+                                Просмотреть корзину
+                                <svg class="icon w-6 h-6 transition-all duration-300" viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        fill-rule="evenodd"
+                                        d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.28 10.28a.75.75 0 000-1.06l-3-3a.75.75 0 10-1.06 1.06l1.72 1.72H8.25a.75.75 0 000 1.5h5.69l-1.72 1.72a.75.75 0 101.06 1.06l3-3z"
+                                        clip-rule="evenodd"
+                                    ></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(notification);
+                setTimeout(() => {
+                    notification.classList.add('visible');
+                }, 100);
+
+                setTimeout(() => {
+                    hideNotification(notificationId);
+                }, 1500);
+
+            }, delay);
+        }
+
+        function hideNotification(notificationId) {
+            const notification = document.getElementById(notificationId);
+            if (notification) {
+                notification.classList.remove('visible');
+                setTimeout(() => {
+                    notification.remove();
+                    updateNotificationPositions();
+                }, 300);
+            }
+        }
+
+        async function loadMenu() {
+            try {
+                const response = await fetch('http://localhost:3000/api/menu');
+                if (!response.ok) throw new Error('Ошибка загрузки меню');
+                const data = await response.json();
+
+                const { categories } = data;
+
+                const pizzaGrid = document.getElementById('pizza-grid');
+                categories.pizza.forEach(item => pizzaGrid.appendChild(createMenuCard(item)));
+
+                const pastaGrid = document.getElementById('pasta-grid');
+                categories.pasta.forEach(item => pastaGrid.appendChild(createMenuCard(item)));
+
+                const drinksGrid = document.getElementById('drinks-grid');
+                categories.drinks.forEach(item => drinksGrid.appendChild(createMenuCard(item)));
+            } catch (error) {
+                console.error('Ошибка:', error);
+            }
+        }
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('modal') === 'ordered') {
+            const modal = document.getElementById('order-success-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+
+            document.getElementById('close-order-modal').addEventListener('click', () => {
+                modal.classList.add('hidden');
+                // Удаляем параметр из URL без перезагрузки
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, '', newUrl);
+            });
+        }
+        window.addEventListener('DOMContentLoaded', loadMenu);
+    }
+checkoutForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = new FormData(checkoutForm);
+    const data = {
+        user_name: formData.get('user_name'),
+        phone: formData.get('phone').replace(/\D/g, ''), // убираем всё кроме цифр
+        cart: JSON.parse(localStorage.getItem('cart')) || []
+    };
+
+    try {
+        const response = await fetch('http://127.0.0.1:3000/api/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (response.ok) {
+            localStorage.removeItem('cart');
+            loadCart();
+            checkoutModal.classList.add('hidden');
+
+            // Переход на index.html с параметром
+            window.location.href = 'index.html?modal=ordered';
+        } else {
+            checkoutMessage.textContent = result.error || 'Ошибка создания заказа';
+            checkoutMessage.classList.add('error-message');
+        }
+    } catch (error) {
+        checkoutMessage.textContent = 'Ошибка соединения с сервером';
+        checkoutMessage.classList.add('error-message');
+        console.error('Fetch error:', error);
+    }
+});
+</script>
+</body>
+</html>
