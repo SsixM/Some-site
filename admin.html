@@ -61,17 +61,26 @@
             const contentContainer = document.getElementById('admin-content-container');
             const tabButtons = tabsContainer.querySelectorAll('.admin-tab-button');
             const tabContents = contentContainer.querySelectorAll('[data-tab-content]');
-            const subTabsContainer = document.getElementById('admin-sub-tabs');
-            const subTabButtons = subTabsContainer ? subTabsContainer.querySelectorAll('.admin-sub-tab-button') : [];
-            const subTabContents = document.querySelectorAll('[data-sub-tab-content]');
+
+            // --- Элементы для Блюд ---
             const addDishForm = document.getElementById('add-dish-form');
             const removeDishForm = document.getElementById('remove-dish-form');
-            const tableLinkForm = document.getElementById('table-link-form');
             const dishSelect = document.getElementById('dish-to-remove');
             const addDishMessage = document.getElementById('add-dish-message');
             const removeDishMessage = document.getElementById('remove-dish-message');
+
+            // --- Элементы для Категорий (НОВОЕ) ---
+            const addCategoryForm = document.getElementById('add-category-form');
+            const removeCategoryForm = document.getElementById('remove-category-form');
+            const categorySelect = document.getElementById('category-to-remove');
+            const addCategoryMessage = document.getElementById('add-category-message');
+            const removeCategoryMessage = document.getElementById('remove-category-message');
+
+            // --- Элементы для Ссылок ---
+            const tableLinkForm = document.getElementById('table-link-form');
             const tableLinkMessage = document.getElementById('table-link-message');
             const tableLinkOutput = document.getElementById('table-link-output');
+
             const token = localStorage.getItem('token');
 
             // Auth check at the beginning
@@ -100,7 +109,6 @@
                 const authValid = await checkAuth();
                 if (!authValid) return;
 
-                // Rest of the original code
                 // Загрузка блюд для удаления
                 async function loadDishes() {
                     try {
@@ -121,6 +129,35 @@
                         console.error('Error loading dishes:', error);
                         removeDishMessage.textContent = 'Ошибка загрузки блюд';
                         removeDishMessage.classList.add('error-message');
+                    }
+                }
+
+                // (НОВАЯ ФУНКЦИЯ) Загрузка категорий для удаления
+                async function loadCategories() {
+                    try {
+                        // Мы можем использовать тот же эндпоинт, что и для блюд, чтобы получить ключи категорий
+                        const response = await fetch('http://127.0.0.1:3000/api/menu', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        categorySelect.innerHTML = '<option value="" disabled selected>Выберите категорию...</option>';
+
+                        // Используем hardcoded список из формы добавления блюд,
+                        // чтобы получить "красивые" имена
+                        const dishCategorySelect = document.getElementById('dish-category');
+                        Array.from(dishCategorySelect.options).forEach(opt => {
+                            if (opt.value) { // Пропускаем пустые
+                                const option = document.createElement('option');
+                                option.value = opt.value; // 'pizza'
+                                option.textContent = opt.textContent; // 'Пицца'
+                                categorySelect.appendChild(option);
+                            }
+                        });
+
+                    } catch (error) {
+                        console.error('Error loading categories:', error);
+                        removeCategoryMessage.textContent = 'Ошибка загрузки категорий';
+                        removeCategoryMessage.classList.add('error-message');
                     }
                 }
 
@@ -332,7 +369,69 @@
                     }
                 });
 
-                // Переключение вкладок
+                // --- (НОВЫЕ ОБРАБОТЧИКИ) ---
+
+                // Обработка формы добавления категории
+                addCategoryForm.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    addCategoryMessage.textContent = '';
+                    const formData = new FormData(addCategoryForm);
+                    try {
+                        // Эмулируем запрос к API
+                        const response = await fetch('http://127.0.0.1:3000/api/add-category', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            addCategoryMessage.textContent = data.message;
+                            addCategoryMessage.classList.add('success-message');
+                            addCategoryForm.reset();
+                            loadCategories(); // Обновляем список категорий
+                        } else {
+                            addCategoryMessage.textContent = data.error || 'Ошибка добавления категории';
+                            addCategoryMessage.classList.add('error-message');
+                        }
+                    } catch (error) {
+                        addCategoryMessage.textContent = 'Ошибка соединения с сервером';
+                        addCategoryMessage.classList.add('error-message');
+                        console.error('Fetch error:', error);
+                    }
+                });
+
+                // Обработка формы удаления категории
+                removeCategoryForm.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    removeCategoryMessage.textContent = '';
+                    const formData = new FormData(removeCategoryForm);
+                    try {
+                        // Эмулируем запрос к API
+                        const response = await fetch('http://127.0.0.1:3000/api/remove-category', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            removeCategoryMessage.textContent = data.message;
+                            removeCategoryMessage.classList.add('success-message');
+                            loadCategories(); // Обновляем список категорий
+                        } else {
+                            removeCategoryMessage.textContent = data.error || 'Ошибка удаления категории';
+                            removeCategoryMessage.classList.add('error-message');
+                        }
+                    } catch (error) {
+                        removeCategoryMessage.textContent = 'Ошибка соединения с сервером';
+                        removeCategoryMessage.classList.add('error-message');
+                        console.error('Fetch error:', error);
+                    }
+                });
+
+
+                // --- (ОБНОВЛЕННАЯ ЛОГИКА ВЫБОРА ВКЛАДОК) ---
+
+                // Переключение основных вкладок
                 function switchTab(targetTab) {
                     tabButtons.forEach(button => {
                         button.classList.remove('active');
@@ -345,15 +444,22 @@
                         content.classList.add('hidden');
                         if (content.id === `${targetTab}-content`) {
                             content.classList.remove('hidden');
-                            if (targetTab === 'dishes') {
+
+                            // Логика для вкладок, у которых есть свои под-вкладки
+                            const subTabNav = content.querySelector('.admin-sub-tabs');
+                            if (subTabNav) {
+                                const subTabButtons = subTabNav.querySelectorAll('.admin-sub-tab-button');
+                                // Находим активную под-вкладку или берем первую
                                 const activeSubTab = Array.from(subTabButtons).find(btn => btn.classList.contains('active')) || subTabButtons[0];
+
                                 if (activeSubTab) {
-                                    switchSubTab(activeSubTab.dataset.subTab);
+                                    // Переключаем под-вкладку, передавая родительский контейнер
+                                    switchSubTab(activeSubTab.dataset.subTab, content);
                                 }
-                                if (activeSubTab.dataset.subTab === 'remove-dish') {
-                                    loadDishes();
-                                }
-                            } else if (targetTab === 'orders') {
+                            }
+
+                            // Логика загрузки для основных вкладок (если у них нет под-вкладок)
+                            if (targetTab === 'orders') {
                                 loadOrders();
                             }
                         }
@@ -367,7 +473,10 @@
                     }
                 });
 
-                function switchSubTab(targetSubTab) {
+                // Переключение под-вкладок (теперь принимает 'contextPanel')
+                function switchSubTab(targetSubTab, contextPanel) {
+                    // Находим кнопки только внутри нужного родителя
+                    const subTabButtons = contextPanel.querySelectorAll('.admin-sub-tab-button');
                     subTabButtons.forEach(button => {
                         button.classList.remove('active');
                         if (button.dataset.subTab === targetSubTab) {
@@ -375,25 +484,35 @@
                         }
                     });
 
+                    // Находим контент только внутри нужного родителя
+                    const subTabContents = contextPanel.querySelectorAll('[data-sub-tab-content]');
                     subTabContents.forEach(content => {
                         content.classList.add('hidden');
                         if (content.id === `${targetSubTab}-sub-content`) {
                             content.classList.remove('hidden');
+
+                            // Логика загрузки для конкретных под-вкладок
                             if (targetSubTab === 'remove-dish') {
                                 loadDishes();
+                            }
+                            if (targetSubTab === 'remove-category') {
+                                loadCategories();
                             }
                         }
                     });
                 }
 
-                if (subTabsContainer) {
-                    subTabsContainer.addEventListener('click', (event) => {
-                        const button = event.target.closest('.admin-sub-tab-button');
-                        if (button) {
-                            switchSubTab(button.dataset.subTab);
+                // Единый обработчик для ВСЕХ под-вкладок (делегирование событий)
+                contentContainer.addEventListener('click', (event) => {
+                    const button = event.target.closest('.admin-sub-tab-button');
+                    if (button) {
+                        // Находим родительский <section>
+                        const contextPanel = button.closest('[data-tab-content]');
+                        if (contextPanel) {
+                            switchSubTab(button.dataset.subTab, contextPanel);
                         }
-                    });
-                }
+                    }
+                });
 
                 // Инициализация
                 switchTab('orders');
@@ -417,6 +536,7 @@
             <nav id="admin-tabs" class="flex w-full justify-center overflow-x-auto space-x-4 py-2">
                 <button data-tab="orders" class="admin-tab-button active">Заказы</button>
                 <button data-tab="dishes" class="admin-tab-button">Блюда</button>
+                <button data-tab="categories" class="admin-tab-button">Категории</button>
                 <button data-tab="create-links" class="admin-tab-button">Создание ссылок</button>
             </nav>
         </div>
@@ -433,11 +553,11 @@
 
         <section id="dishes-content" data-tab-content class="space-y-6 hidden">
             <h2 class="admin-content-title">Управление Блюдами</h2>
-            <div id="admin-sub-tabs" class="flex space-x-6 border-b pb-2 mb-4">
+            <div class="admin-sub-tabs flex space-x-6 border-b pb-2 mb-4">
                 <button data-sub-tab="add-dish" class="admin-sub-tab-button active">Добавить блюдо</button>
                 <button data-sub-tab="remove-dish" class="admin-sub-tab-button">Удалить блюдо</button>
             </div>
-            <div id="sub-content-container">
+            <div class="sub-content-container">
                 <div id="add-dish-sub-content" data-sub-tab-content class="space-y-6">
                     <form id="add-dish-form" class="admin-card space-y-4">
                         <h3 class="text-2xl font-semibold text-gray-800 mb-4">Добавление Нового Блюда</h3>
@@ -485,6 +605,45 @@
                 </div>
             </div>
         </section>
+
+        <section id="categories-content" data-tab-content class="space-y-6 hidden">
+            <h2 class="admin-content-title">Управление Категориями</h2>
+            <div class="admin-sub-tabs flex space-x-6 border-b pb-2 mb-4">
+                <button data-sub-tab="add-category" class="admin-sub-tab-button active">Добавить категорию</button>
+                <button data-sub-tab="remove-category" class="admin-sub-tab-button">Удалить категорию</button>
+            </div>
+            <div class="sub-content-container">
+                <div id="add-category-sub-content" data-sub-tab-content class="space-y-6">
+                    <form id="add-category-form" class="admin-card space-y-4">
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Добавление Новой Категории</h3>
+                        <div>
+                            <label for="category-name" class="block text-sm font-medium text-gray-700 mb-1">Название Категории (Рус)</label>
+                            <input type="text" id="category-name" name="name" class="admin-input" placeholder="Например, Пицца" required>
+                        </div>
+                        <div>
+                            <label for="category-value" class="block text-sm font-medium text-gray-700 mb-1">Значение (Eng, для ID)</label>
+                            <input type="text" id="category-value" name="value" class="admin-input" placeholder="Например, pizza" required>
+                        </div>
+                        <button type="submit" class="admin-submit-button w-full">Сохранить Категорию</button>
+                        <div id="add-category-message" class="message"></div>
+                    </form>
+                </div>
+                <div id="remove-category-sub-content" data-sub-tab-content class="space-y-6 hidden">
+                    <form id="remove-category-form" class="admin-card space-y-4">
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Удаление Категории</h3>
+                        <div>
+                            <label for="category-to-remove" class="block text-sm font-medium text-gray-700 mb-1">Выберите Категорию для Удаления</label>
+                            <select id="category-to-remove" name="category-id" class="admin-input" required>
+                                <option value="" disabled selected>Выберите категорию...</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="admin-submit-button w-full bg-red-600 hover:bg-red-700">Удалить Категорию</button>
+                        <div id="remove-category-message" class="message"></div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
 
         <section id="create-links-content" data-tab-content class="space-y-6 hidden">
             <h2 class="admin-content-title">Генерация Ссылок</h2>
