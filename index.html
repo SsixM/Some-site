@@ -6,60 +6,64 @@
     <title>Меню Доставки</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style type="text/tailwindcss">
         @layer components {
             .menu-category-title {
-                @apply text-4xl text-[#3b443d] tracking-tighter text-center border-b-2 border-[#597e52]/40 mt-10 mb-5 pb-3;
+                @apply text-3xl md:text-4xl text-[#3b443d] font-bold tracking-tight text-center border-b-2 border-[#597e52]/40 mt-10 mb-6 pb-3;
             }
             .navelement {
-                @apply tracking-tighter text-xl text-[#3b443d] hover:text-[#597e52] font-medium p-2 rounded-md transition duration-150 ease-in-out hover:bg-[#597e52]/10;
+                @apply tracking-tight text-lg text-[#3b443d] hover:text-[#597e52] font-semibold px-4 py-2 rounded-lg transition duration-200 ease-in-out hover:bg-[#597e52]/10;
             }
             .navelement.active {
                 @apply text-[#597e52] bg-[#597e52]/10;
             }
+            /* ИЗМЕНЕНО: grid-cols-1 -> grid-cols-2, gap-5 -> gap-4 */
             .menu-category-grid{
-                @apply grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8
+                @apply grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6
             }
             .menu-category-card {
-                @apply bg-white border border-gray-300 p-4 md:p-6 rounded-lg transition-shadow duration-300 hover:shadow-lg;
+                @apply bg-white border border-gray-200 rounded-xl shadow-sm transition-all duration-300 hover:shadow-lg hover:border-[#597e52]/30 overflow-hidden;
             }
             .menu-category-card-image {
-                @apply rounded-md w-full object-cover block h-32 sm:h-40 bg-gray-100;
+                @apply w-full object-cover block h-48 sm:h-52 bg-gray-100;
+            }
+            .menu-category-card-content {
+                @apply p-4 md:p-5;
             }
             .menu-category-card-text {
-                @apply text-xl sm:text-2xl font-medium mb-2 tracking-tighter;
+                @apply text-xl md:text-2xl font-bold mb-2 tracking-tight text-[#3b443d];
             }
             .menu-category-card-text-desc {
-                @apply text-[#3b443d]/80 mb-3 text-sm hidden sm:block;
-            }
-            .menu-category-card-parent {
-                @apply flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3;
-            }
-            .menu-category-card-parent-price {
-                @apply text-xl md:text-2xl tracking-tighter;
+                @apply text-[#3b443d]/70 mb-4 text-sm leading-relaxed line-clamp-2;
             }
 
-            /* УЛУЧШЕННЫЕ КНОПКИ */
+            .menu-category-card-parent {
+                @apply flex flex-col justify-between gap-2 mt-auto pt-3 border-t border-gray-100;
+            }
+            .menu-category-card-parent-price {
+                @apply text-2xl md:text-3xl font-bold tracking-tight text-[#597e52];
+            }
+
             .quantity-controls {
                 @apply flex items-center gap-2 bg-[#597e52]/10 rounded-full p-1;
             }
 
             .quantity-btn {
-                @apply w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-[#597e52] text-white font-bold text-lg transition-all duration-200 hover:bg-[#4a6945] active:scale-95 shadow-md hover:shadow-lg;
+                @apply w-8 h-8 flex items-center justify-center rounded-full bg-[#597e52] text-white font-bold text-lg transition-all duration-200 hover:bg-[#4a6945] active:scale-95 shadow-sm hover:shadow-md;
             }
 
             .quantity-display {
-                @apply min-w-[32px] sm:min-w-[40px] text-center text-base sm:text-lg font-bold text-[#3b443d];
+                @apply min-w-[40px] text-center text-lg font-bold text-[#3b443d];
             }
 
             .add-to-cart-btn {
-                @apply px-4 py-2 sm:px-6 sm:py-2 bg-[#597e52] text-white font-bold rounded-full transition-all duration-200 hover:bg-[#4a6945] active:scale-95 shadow-md hover:shadow-lg text-sm sm:text-base;
+                @apply px-5 py-2.5 bg-[#597e52] text-white font-semibold rounded-full transition-all duration-200 hover:bg-[#4a6945] active:scale-95 shadow-sm hover:shadow-md text-sm;
             }
 
             .cart-notification {
-                @apply fixed right-5 w-[360px] h-[150px] bg-white/90 rounded-[15px] shadow-md p-2 backdrop-blur-md z-50 transition-all duration-300 ease-in-out opacity-0 translate-y-10;
+                @apply fixed right-5 w-[360px] h-[150px] bg-white/95 rounded-2xl shadow-lg p-2 backdrop-blur-md z-50 transition-all duration-300 ease-in-out opacity-0 translate-y-10 border border-gray-200;
             }
             .cart-notification.visible {
                 @apply opacity-100 translate-y-0;
@@ -74,7 +78,7 @@
             }
 
             #cart-count {
-                @apply scale-0 group-hover:scale-100 transition-transform duration-200;
+                @apply scale-0 transition-transform duration-200;
             }
         }
     </style>
@@ -83,7 +87,7 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Archivo Black', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
                     },
                 },
             },
@@ -92,15 +96,15 @@
 </head>
 <body class="bg-[#f4eee1] text-[#3b443d] font-sans">
 <div class="container mx-auto p-4 sm:p-10 max-w-7xl">
-    <h1 class="text-5xl font-bold text-center mb-12 tracking-tighter">Меню</h1>
+    <h1 class="text-4xl md:text-5xl font-bold text-center mb-10 tracking-tight">Меню</h1>
 
-    <div class="sticky top-0 z-10 bg-white shadow-md border-t border-gray-200">
-        <div class="container mx-auto max-w-7xl px-2">
-            <nav class="flex w-full justify-start md:justify-center overflow-x-auto overflow-y-none space-x-7 py-2">
-                <a href="#cat1" class="navelement">Пицца</a>
-                <a href="#cat2" class="navelement">Паста</a>
-                <a href="#cat3" class="navelement">Напитки</a>
-                <a href="#cat4" class="navelement">Другие</a>
+    <div class="sticky top-0 z-10 bg-white shadow-md border-b border-gray-200">
+        <div class="container mx-auto max-w-7xl px-4">
+            <nav class="flex w-full justify-start md:justify-center overflow-x-auto overflow-y-none space-x-2 py-3">
+                <a href="#cat1" class="navelement whitespace-nowrap">Пицца</a>
+                <a href="#cat2" class="navelement whitespace-nowrap">Паста</a>
+                <a href="#cat3" class="navelement whitespace-nowrap">Напитки</a>
+                <a href="#cat4" class="navelement whitespace-nowrap">Другие</a>
             </nav>
         </div>
     </div>
@@ -124,21 +128,20 @@
     </section>
 </div>
 <div id="order-success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center mx-4">
         <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
         <h2 class="text-2xl font-bold mb-2">Заказ оформлен!</h2>
-        <p class="text-[#3b443d]/80 mb-6">Мы приняли ваш заказ. Ожидайте, скоро принесём!</p>
-        <button id="close-order-modal" class="px-6 py-3 bg-[#597e52] text-white font-bold rounded-lg hover:scale-105 transition">
+        <p class="text-[#3b443d]/70 mb-6">Мы приняли ваш заказ. Ожидайте, скоро принесём!</p>
+        <button id="close-order-modal" class="px-6 py-3 bg-[#597e52] text-white font-semibold rounded-lg hover:scale-105 transition">
             Окей
         </button>
     </div>
 </div>
 <div id="notification-container"></div>
 
-<!-- Кнопка корзины -->
-<div id="floating-cart-btn" class="fixed top-6 right-6 z-40 sm: ">
+<div id="floating-cart-btn" class="fixed top-6 right-6 z-40">
     <button id="cart-btn" class="relative w-14 h-14 bg-[#597e52] text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 7.5M7 13l1.5 7.5M16 13l1.5 7.5"></path>
@@ -183,15 +186,18 @@
             img.className = 'menu-category-card-image';
             card.appendChild(img);
 
+            const content = document.createElement('div');
+            content.className = 'menu-category-card-content';
+
             const title = document.createElement('h3');
             title.className = 'menu-category-card-text';
             title.textContent = item.name;
-            card.appendChild(title);
+            content.appendChild(title);
 
             const desc = document.createElement('p');
             desc.className = 'menu-category-card-text-desc';
             desc.textContent = item.description;
-            card.appendChild(desc);
+            content.appendChild(desc);
 
             const parent = document.createElement('div');
             parent.className = 'menu-category-card-parent';
@@ -206,7 +212,6 @@
 
             const quantity = getItemQuantity(item.id);
             if (quantity > 0) {
-                // Показываем контролы количества
                 quantityContainer.className = 'quantity-controls';
 
                 const minusButton = document.createElement('button');
@@ -227,7 +232,6 @@
                 plusButton.onclick = () => addToCart(item);
                 quantityContainer.appendChild(plusButton);
             } else {
-                // Показываем кнопку "Добавить"
                 const addButton = document.createElement('button');
                 addButton.className = 'add-to-cart-btn';
                 addButton.textContent = 'Добавить';
@@ -236,7 +240,8 @@
             }
 
             parent.appendChild(quantityContainer);
-            card.appendChild(parent);
+            content.appendChild(parent);
+            card.appendChild(content);
 
             return card;
         }
@@ -252,12 +257,9 @@
             if (!quantityContainer) return;
 
             const quantity = getItemQuantity(item.id);
-
-            // Очищаем контейнер
             quantityContainer.innerHTML = '';
 
             if (quantity > 0) {
-                // Показываем контролы количества
                 quantityContainer.className = 'quantity-controls';
 
                 const minusButton = document.createElement('button');
@@ -278,7 +280,6 @@
                 plusButton.onclick = () => addToCart(item);
                 quantityContainer.appendChild(plusButton);
             } else {
-                // Показываем кнопку "Добавить"
                 quantityContainer.className = '';
                 const addButton = document.createElement('button');
                 addButton.className = 'add-to-cart-btn';
@@ -301,7 +302,6 @@
             showNotification(item);
             updateCartButton();
         }
-
 
         function removeFromCart(item) {
             let cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -350,31 +350,31 @@
                 notification.style.bottom = `${container.childElementCount * 160 + 40}px`;
 
                 notification.innerHTML = `
-                    <div class="card-wrapper flex flex-nowrap items-center w-full">
+                    <div class="card-wrapper flex flex-nowrap items-center w-full h-full">
                         <div class="card-icon w-1/5">
-                            <div class="icon-cart-box bg-[#3b443d]/20 w-12 h-12 rounded-full text-center p-3 mx-auto flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 576 512" fill="#3b443d">
-                                    <path d="M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0 -96z"></path>
+                            <div class="icon-cart-box bg-[#597e52]/15 w-12 h-12 rounded-full text-center p-3 mx-auto flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 576 512" fill="#597e52">
+                                    <path d="M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z"></path>
                                 </svg>
                             </div>
                         </div>
-                        <div class="card-content w-4/5 pb-4">
-                            <div class="card-title-wrapper flex flex-nowrap items-baseline w-full">
-                                <span class="card-title w-[95%] text-base font-semibold text-[#3b443d] pt-5 pl-2.5">${isRemoval ? 'Удалено из корзины!' : 'Добавлено в корзину!'}</span>
-                                <span class="card-action w-[5%] text-right pr-7">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="15" width="15" viewBox="0 0 384 512" class="cursor-pointer fill-[#3b443d]/20 transition-all duration-300 hover:fill-[#3b443d]/60" onclick="hideNotification('${notificationId}')">
-                                        <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"></path>
-                                    </svg>
-                                </span>
-                            </div>
-                            <div class="product-name text-sm text-[#3b443d]/90 pt-2.5 pl-2.5 cursor-pointer hover:underline">${item.name}</div>
-                            <div class="product-price text-base font-semibold text-[#3b443d] pb-2.5 pl-2.5">${item.price} ₽</div>
-                            <button onclick="window.location.href='./cart.html'" class="button relative transition-all duration-300 shadow-xl py-2 px-4 bg-[#597e52] rounded-full flex items-center justify-center text-white gap-2.5 font-bold border-3 border-white/30 outline-none overflow-hidden text-base cursor-pointer h-9 ml-2.5">
-                                Просмотреть корзину
-                                <svg class="icon w-6 h-6 transition-all duration-300" viewBox="0 0 24 24" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.28 10.28a.75.75 0 000-1.06l-3-3a.75.75 0 10-1.06 1.06l1.72 1.72H8.25a.75.75 0 000 1.5h5.69l-1.72 1.72a.75.75 0 101.06 1.06l3-3z" clip-rule="evenodd"></path>
+                        <div class="card-content w-4/5 flex flex-col justify-between h-full py-2">
+                            <div class="card-title-wrapper flex flex-nowrap items-center justify-between w-full">
+                                <span class="card-title text-base font-semibold text-[#3b443d] pl-2">${isRemoval ? 'Удалено из корзины!' : 'Добавлено в корзину!'}</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" height="14" width="14" viewBox="0 0 384 512" class="cursor-pointer fill-[#3b443d]/30 transition-all duration-200 hover:fill-[#3b443d] mr-2" onclick="hideNotification('${notificationId}')">
+                                    <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"></path>
                                 </svg>
-                            </button>
+                            </div>
+                            <div class="product-name text-sm text-[#3b443d]/80 pl-2 font-medium">${item.name}</div>
+                            <div class="flex items-center justify-between pl-2 pr-2">
+                                <div class="product-price text-base font-bold text-[#597e52]">${item.price} ₽</div>
+                                <button onclick="window.location.href='./cart.html'" class="button transition-all duration-200 py-1.5 px-3 bg-[#597e52] rounded-full flex items-center justify-center text-white gap-1.5 font-semibold text-xs cursor-pointer hover:bg-[#4a6945]">
+                                    Корзина
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.28 10.28a.75.75 0 000-1.06l-3-3a.75.75 0 10-1.06 1.06l1.72 1.72H8.25a.75.75 0 000 1.5h5.69l-1.72 1.72a.75.75 0 101.06 1.06l3-3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -451,7 +451,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateCartButton();
 
-            // Логика для выделения активной категории в навбаре
             const navLinks = document.querySelectorAll('.navelement');
             const sections = document.querySelectorAll('section');
 
