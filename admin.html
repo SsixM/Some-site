@@ -62,28 +62,21 @@
             const tabButtons = tabsContainer.querySelectorAll('.admin-tab-button');
             const tabContents = contentContainer.querySelectorAll('[data-tab-content]');
 
-            // --- Элементы для Блюд ---
             const addDishForm = document.getElementById('add-dish-form');
-            const removeDishForm = document.getElementById('remove-dish-form');
-            const dishSelect = document.getElementById('dish-to-remove');
             const addDishMessage = document.getElementById('add-dish-message');
-            const removeDishMessage = document.getElementById('remove-dish-message');
 
-            // --- Элементы для Категорий (НОВОЕ) ---
             const addCategoryForm = document.getElementById('add-category-form');
             const removeCategoryForm = document.getElementById('remove-category-form');
             const categorySelect = document.getElementById('category-to-remove');
             const addCategoryMessage = document.getElementById('add-category-message');
             const removeCategoryMessage = document.getElementById('remove-category-message');
 
-            // --- Элементы для Ссылок ---
             const tableLinkForm = document.getElementById('table-link-form');
             const tableLinkMessage = document.getElementById('table-link-message');
             const tableLinkOutput = document.getElementById('table-link-output');
 
             const token = localStorage.getItem('token');
 
-            // Auth check at the beginning
             async function checkAuth() {
                 try {
                     const response = await fetch('http://127.0.0.1:3000/api/orders', {
@@ -109,59 +102,98 @@
                 const authValid = await checkAuth();
                 if (!authValid) return;
 
-                // Загрузка блюд для удаления
-                async function loadDishes() {
+                window.removeDish = async function(dishId) {
+                    if (!confirm('Вы уверены, что хотите удалить это блюдо?')) return;
                     try {
-                        const response = await fetch('http://127.0.0.1:3000/api/menu', {
-                            headers: { 'Authorization': `Bearer ${token}` }
+                        const formData = new FormData();
+                        formData.append('dish-id', dishId);
+                        const response = await fetch('http://127.0.0.1:3000/api/remove-dish', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: formData
                         });
                         const data = await response.json();
-                        dishSelect.innerHTML = '<option value="" disabled selected>Выберите блюдо...</option>';
-                        for (const category in data.categories) {
-                            data.categories[category].forEach(dish => {
-                                const option = document.createElement('option');
-                                option.value = dish.id;
-                                option.textContent = `${dish.name} (${dish.price} ₽)`;
-                                dishSelect.appendChild(option);
-                            });
+                        if (response.ok) {
+                            loadDishes();
+                            loadCategories();
+                        } else {
+                            alert(data.error || 'Ошибка удаления блюда');
                         }
                     } catch (error) {
-                        console.error('Error loading dishes:', error);
-                        removeDishMessage.textContent = 'Ошибка загрузки блюд';
-                        removeDishMessage.classList.add('error-message');
+                        console.error('Error removing dish:', error);
+                        alert('Ошибка соединения с сервером');
                     }
                 }
 
-                // (НОВАЯ ФУНКЦИЯ) Загрузка категорий для удаления
-                async function loadCategories() {
+                async function loadDishes() {
+                    const container = document.getElementById('dishes-container');
+                    if (!container) return;
                     try {
-                        // Мы можем использовать тот же эндпоинт, что и для блюд, чтобы получить ключи категорий
+                        const token = localStorage.getItem('token');
                         const response = await fetch('http://127.0.0.1:3000/api/menu', {
                             headers: { 'Authorization': `Bearer ${token}` }
                         });
                         const data = await response.json();
-                        categorySelect.innerHTML = '<option value="" disabled selected>Выберите категорию...</option>';
+                        const categories = data.categories;
 
-                        // Используем hardcoded список из формы добавления блюд,
-                        // чтобы получить "красивые" имена
-                        const dishCategorySelect = document.getElementById('dish-category');
-                        Array.from(dishCategorySelect.options).forEach(opt => {
-                            if (opt.value) { // Пропускаем пустые
-                                const option = document.createElement('option');
-                                option.value = opt.value; // 'pizza'
-                                option.textContent = opt.textContent; // 'Пицца'
-                                categorySelect.appendChild(option);
-                            }
+                        container.innerHTML = '';
+
+                        Object.entries(categories).forEach(([catKey, catObj]) => {
+                            const catTitle = document.createElement('h3');
+                            catTitle.className = 'text-2xl font-bold mt-8 mb-4 text-[#597e52]';
+                            catTitle.textContent = catObj.name;
+                            container.appendChild(catTitle);
+
+                            const grid = document.createElement('div');
+                            grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6';
+
+                            catObj.items.forEach(item => {
+                                const card = document.createElement('div');
+                                card.className = 'bg-white rounded-xl shadow-sm p-4 border border-gray-200';
+                                card.innerHTML = `
+                                    <img src="${item.image}" alt="${item.name}" class="w-full h-40 object-cover rounded-lg mb-3">
+                                    <h4 class="font-semibold text-lg">${item.name}</h4>
+                                    <p class="text-sm text-[#3b443d]/70 mb-2">${item.description}</p>
+                                    <p class="font-bold text-[#597e52]">${item.price} ₽</p>
+                                    <button class="mt-3 w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600"
+                                            onclick="removeDish(${item.id})">Удалить</button>
+                                `;
+                                grid.appendChild(card);
+                            });
+
+                            container.appendChild(grid);
                         });
-
-                    } catch (error) {
-                        console.error('Error loading categories:', error);
-                        removeCategoryMessage.textContent = 'Ошибка загрузки категорий';
-                        removeCategoryMessage.classList.add('error-message');
+                    } catch (e) {
+                        console.error('Error loading dishes:', e);
                     }
                 }
 
-                // Загрузка заказов
+                async function loadCategories() {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch('http://127.0.0.1:3000/api/categories', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await response.json();
+
+                    const addSelect   = document.getElementById('dish-category');
+                    const removeSelect = document.getElementById('category-to-remove');
+
+                    addSelect.innerHTML   = '<option value="" disabled selected>Выберите категорию...</option>';
+                    removeSelect.innerHTML = '<option value="" disabled selected>Выберите категорию...</option>';
+
+                    data.categories.forEach(cat => {
+                        const optAdd = document.createElement('option');
+                        optAdd.value = cat.value;
+                        optAdd.textContent = cat.name;
+                        addSelect.appendChild(optAdd);
+
+                        const optRem = document.createElement('option');
+                        optRem.value = cat.value;
+                        optRem.textContent = cat.name;
+                        removeSelect.appendChild(optRem);
+                    });
+                }
+
                 async function loadOrders() {
                     try {
                         const response = await fetch('http://127.0.0.1:3000/api/orders', {
@@ -171,54 +203,52 @@
                         const ordersContainer = document.getElementById('orders-list');
                         ordersContainer.innerHTML = '';
                         data.orders.forEach(order => {
-                            const orderDiv = document.createElement('div');
-                            orderDiv.className = 'p-4 border rounded-md bg-gray-50 shadow-sm mb-4';
-                            orderDiv.innerHTML = `
-                                <p class="font-bold text-lg mb-1">Заказ #${order.id}</p>
-                                <p>Имя: ${order.user_name}</p>
-                                <p>Номер телефона: ${order.phone}</p>
-                                <p>Сумма: ${order.total} ₽</p>
-                                <p class="mb-2">Статус: <span class="${order.status === 'new' ? 'text-green-600' : order.status === 'in_progress' ? 'text-yellow-600' : 'text-red-600'} font-medium">${order.status === 'new' ? 'Новый' : order.status === 'in_progress' ? 'В процессе' : 'Закрыт'}</span></p>
-                                <button class="order-details-toggle-button" data-order-id="${order.id}">Показать детали</button>
-                                <div id="details-${order.id}" class="hidden mt-3 pt-3 border-t border-gray-200">
-                                    <p class="font-semibold mb-1">Состав заказа:</p>
-                                    <ul class="list-disc list-inside ml-2 text-sm text-gray-800 space-y-0.5">
-                                        ${order.items.map(item => `<li>${item.name} x ${item.quantity} - ${item.price * item.quantity} ₽</li>`).join('')}
-                                    </ul>
-                                </div>
-                            `;
+                        const orderDiv = document.createElement('div');
+                        orderDiv.className = 'p-4 border rounded-md bg-gray-50 shadow-sm mb-4';
+                        orderDiv.innerHTML = `
+                            <p class="font-bold text-lg mb-1">Заказ #${order.id}</p>
+                            <p>Имя: ${order.user_name}</p>
+                            <p>Номер телефона: ${order.phone}</p>
+                            <p>Сумма: ${order.total} ₽</p>
+                            <p class="mb-2">Статус: <span class="${order.status === 'new' ? 'text-green-600' : order.status === 'in_progress' ? 'text-yellow-600' : 'text-red-600'} font-medium">${order.status === 'new' ? 'Новый' : order.status === 'in_progress' ? 'В процессе' : 'Закрыт'}</span></p>
+                            <button class="order-details-toggle-button" data-order-id="${order.id}">Показать детали</button>
+                            <div id="details-${order.id}" class="hidden mt-3 pt-3 border-t border-gray-200">
+                                <p class="font-semibold mb-1">Состав заказа:</p>
+                                <ul class="list-disc list-inside ml-2 text-sm text-gray-800 space-y-0.5">
+                                    ${order.items.map(item => `<li>${item.name} x ${item.quantity} - ${item.price * item.quantity} ₽</li>`).join('')}
+                                </ul>
+                            </div>
+                        `;
 
-                            // Кнопки действий
-                            const actionsDiv = document.createElement('div');
-                            actionsDiv.className = 'mt-4 space-x-2';
+                        const actionsDiv = document.createElement('div');
+                        actionsDiv.className = 'mt-4 space-x-2';
 
-                            if (order.status === 'new') {
-                                const takeButton = document.createElement('button');
-                                takeButton.className = 'bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700';
-                                takeButton.textContent = 'Взять заказ';
-                                takeButton.onclick = () => takeOrder(order.id);
-                                actionsDiv.appendChild(takeButton);
-                            }
+                        if (order.status === 'new') {
+                            const takeButton = document.createElement('button');
+                            takeButton.className = 'bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700';
+                            takeButton.textContent = 'Взять заказ';
+                            takeButton.onclick = () => takeOrder(order.id);
+                            actionsDiv.appendChild(takeButton);
+                        }
 
-                            if (order.status !== 'closed') {
-                                const closeButton = document.createElement('button');
-                                closeButton.className = 'bg-red-500 text-white p-2 rounded-md hover:bg-red-700';
-                                closeButton.textContent = 'Закрыть заказ';
-                                closeButton.onclick = () => closeOrder(order.id);
-                                actionsDiv.appendChild(closeButton);
-                            }
+                        if (order.status !== 'closed') {
+                            const closeButton = document.createElement('button');
+                            closeButton.className = 'bg-red-500 text-white p-2 rounded-md hover:bg-red-700';
+                            closeButton.textContent = 'Закрыть заказ';
+                            closeButton.onclick = () => closeOrder(order.id);
+                            actionsDiv.appendChild(closeButton);
+                        }
 
-                            orderDiv.appendChild(actionsDiv);
-                            ordersContainer.appendChild(orderDiv);
+                        orderDiv.appendChild(actionsDiv);
+                        ordersContainer.appendChild(orderDiv);
 
-                            // Toggle details
-                            const toggleButton = orderDiv.querySelector('.order-details-toggle-button');
-                            toggleButton.addEventListener('click', () => {
-                                const detailsDiv = document.getElementById(`details-${order.id}`);
-                                detailsDiv.classList.toggle('hidden');
-                                toggleButton.textContent = detailsDiv.classList.contains('hidden') ? 'Показать детали' : 'Скрыть детали';
-                            });
+                        const toggleButton = orderDiv.querySelector('.order-details-toggle-button');
+                        toggleButton.addEventListener('click', () => {
+                            const detailsDiv = document.getElementById(`details-${order.id}`);
+                            detailsDiv.classList.toggle('hidden');
+                            toggleButton.textContent = detailsDiv.classList.contains('hidden') ? 'Показать детали' : 'Скрыть детали';
                         });
+                    });
                     } catch (error) {
                         console.error('Error loading orders:', error);
                     }
@@ -233,7 +263,6 @@
                         } else {
                             img.src = dataUrl;
                             document.getElementsByClassName('qr-code-parent')[0].classList.remove('hidden');
-                            console.log('QR-код (img) успешно создан!');
                         }
                     });
                 }
@@ -279,7 +308,6 @@
                     }
                 });
 
-                // Взять заказ
                 async function takeOrder(orderId) {
                     try {
                         const response = await fetch(`http://127.0.0.1:3000/api/take-order/${orderId}`, {
@@ -297,7 +325,6 @@
                     }
                 }
 
-                // Закрыть заказ
                 async function closeOrder(orderId) {
                     try {
                         const response = await fetch(`http://127.0.0.1:3000/api/close-order/${orderId}`, {
@@ -315,7 +342,6 @@
                     }
                 }
 
-                // Обработка формы добавления блюда
                 addDishForm.addEventListener('submit', async function(event) {
                     event.preventDefault();
                     addDishMessage.textContent = '';
@@ -331,6 +357,7 @@
                             addDishMessage.textContent = data.message;
                             addDishMessage.classList.add('success-message');
                             addDishForm.reset();
+                            loadCategories();
                         } else {
                             addDishMessage.textContent = data.error || 'Ошибка добавления блюда';
                             addDishMessage.classList.add('error-message');
@@ -342,42 +369,11 @@
                     }
                 });
 
-                // Обработка формы удаления блюда
-                removeDishForm.addEventListener('submit', async function(event) {
-                    event.preventDefault();
-                    removeDishMessage.textContent = '';
-                    const formData = new FormData(removeDishForm);
-                    try {
-                        const response = await fetch('http://127.0.0.1:3000/api/remove-dish', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` },
-                            body: formData
-                        });
-                        const data = await response.json();
-                        if (response.ok) {
-                            removeDishMessage.textContent = data.message;
-                            removeDishMessage.classList.add('success-message');
-                            loadDishes();
-                        } else {
-                            removeDishMessage.textContent = data.error || 'Ошибка удаления блюда';
-                            removeDishMessage.classList.add('error-message');
-                        }
-                    } catch (error) {
-                        removeDishMessage.textContent = 'Ошибка соединения с сервером';
-                        removeDishMessage.classList.add('error-message');
-                        console.error('Fetch error:', error);
-                    }
-                });
-
-                // --- (НОВЫЕ ОБРАБОТЧИКИ) ---
-
-                // Обработка формы добавления категории
                 addCategoryForm.addEventListener('submit', async function(event) {
                     event.preventDefault();
                     addCategoryMessage.textContent = '';
                     const formData = new FormData(addCategoryForm);
                     try {
-                        // Эмулируем запрос к API
                         const response = await fetch('http://127.0.0.1:3000/api/add-category', {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}` },
@@ -388,7 +384,7 @@
                             addCategoryMessage.textContent = data.message;
                             addCategoryMessage.classList.add('success-message');
                             addCategoryForm.reset();
-                            loadCategories(); // Обновляем список категорий
+                            loadCategories();
                         } else {
                             addCategoryMessage.textContent = data.error || 'Ошибка добавления категории';
                             addCategoryMessage.classList.add('error-message');
@@ -400,13 +396,11 @@
                     }
                 });
 
-                // Обработка формы удаления категории
                 removeCategoryForm.addEventListener('submit', async function(event) {
                     event.preventDefault();
                     removeCategoryMessage.textContent = '';
                     const formData = new FormData(removeCategoryForm);
                     try {
-                        // Эмулируем запрос к API
                         const response = await fetch('http://127.0.0.1:3000/api/remove-category', {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}` },
@@ -416,7 +410,7 @@
                         if (response.ok) {
                             removeCategoryMessage.textContent = data.message;
                             removeCategoryMessage.classList.add('success-message');
-                            loadCategories(); // Обновляем список категорий
+                            loadCategories();
                         } else {
                             removeCategoryMessage.textContent = data.error || 'Ошибка удаления категории';
                             removeCategoryMessage.classList.add('error-message');
@@ -428,10 +422,6 @@
                     }
                 });
 
-
-                // --- (ОБНОВЛЕННАЯ ЛОГИКА ВЫБОРА ВКЛАДОК) ---
-
-                // Переключение основных вкладок
                 function switchTab(targetTab) {
                     tabButtons.forEach(button => {
                         button.classList.remove('active');
@@ -445,20 +435,16 @@
                         if (content.id === `${targetTab}-content`) {
                             content.classList.remove('hidden');
 
-                            // Логика для вкладок, у которых есть свои под-вкладки
                             const subTabNav = content.querySelector('.admin-sub-tabs');
                             if (subTabNav) {
                                 const subTabButtons = subTabNav.querySelectorAll('.admin-sub-tab-button');
-                                // Находим активную под-вкладку или берем первую
                                 const activeSubTab = Array.from(subTabButtons).find(btn => btn.classList.contains('active')) || subTabButtons[0];
 
                                 if (activeSubTab) {
-                                    // Переключаем под-вкладку, передавая родительский контейнер
                                     switchSubTab(activeSubTab.dataset.subTab, content);
                                 }
                             }
 
-                            // Логика загрузки для основных вкладок (если у них нет под-вкладок)
                             if (targetTab === 'orders') {
                                 loadOrders();
                             }
@@ -473,9 +459,7 @@
                     }
                 });
 
-                // Переключение под-вкладок (теперь принимает 'contextPanel')
                 function switchSubTab(targetSubTab, contextPanel) {
-                    // Находим кнопки только внутри нужного родителя
                     const subTabButtons = contextPanel.querySelectorAll('.admin-sub-tab-button');
                     subTabButtons.forEach(button => {
                         button.classList.remove('active');
@@ -484,14 +468,12 @@
                         }
                     });
 
-                    // Находим контент только внутри нужного родителя
                     const subTabContents = contextPanel.querySelectorAll('[data-sub-tab-content]');
                     subTabContents.forEach(content => {
                         content.classList.add('hidden');
                         if (content.id === `${targetSubTab}-sub-content`) {
                             content.classList.remove('hidden');
 
-                            // Логика загрузки для конкретных под-вкладок
                             if (targetSubTab === 'remove-dish') {
                                 loadDishes();
                             }
@@ -502,11 +484,9 @@
                     });
                 }
 
-                // Единый обработчик для ВСЕХ под-вкладок (делегирование событий)
                 contentContainer.addEventListener('click', (event) => {
                     const button = event.target.closest('.admin-sub-tab-button');
                     if (button) {
-                        // Находим родительский <section>
                         const contextPanel = button.closest('[data-tab-content]');
                         if (contextPanel) {
                             switchSubTab(button.dataset.subTab, contextPanel);
@@ -514,7 +494,6 @@
                     }
                 });
 
-                // Инициализация
                 switchTab('orders');
                 document.getElementById('logout').addEventListener('click', async function() {
                     localStorage.removeItem('token');
@@ -568,10 +547,7 @@
                         <div>
                             <label for="dish-category" class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
                             <select id="dish-category" name="category" class="admin-input" required>
-                                <option value="pizza">Пицца</option>
-                                <option value="pasta">Паста</option>
-                                <option value="drinks">Напитки</option>
-                                <option value="other">Другие</option>
+                                <option value="" disabled selected>Выберите категорию...</option>
                             </select>
                         </div>
                         <div>
@@ -591,17 +567,7 @@
                     </form>
                 </div>
                 <div id="remove-dish-sub-content" data-sub-tab-content class="space-y-6 hidden">
-                    <form id="remove-dish-form" class="admin-card space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Удаление Блюда</h3>
-                        <div>
-                            <label for="dish-to-remove" class="block text-sm font-medium text-gray-700 mb-1">Выберите Блюдо для Удаления</label>
-                            <select id="dish-to-remove" name="dish-id" class="admin-input" required>
-                                <option value="" disabled selected>Выберите блюдо...</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="admin-submit-button w-full bg-red-600 hover:bg-red-700">Удалить Блюдо</button>
-                        <div id="remove-dish-message" class="message"></div>
-                    </form>
+                    <div id="dishes-container" class="space-y-8"></div>
                 </div>
             </div>
         </section>
@@ -643,7 +609,6 @@
                 </div>
             </div>
         </section>
-
 
         <section id="create-links-content" data-tab-content class="space-y-6 hidden">
             <h2 class="admin-content-title">Генерация Ссылок</h2>

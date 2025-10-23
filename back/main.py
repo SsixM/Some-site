@@ -50,6 +50,15 @@ def verify_token(token):
 
 def init_db():
     with get_db_connection() as conn:
+        # Таблица категорий
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                value TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL
+            )
+        ''')
+
         # Таблица блюд
         conn.execute('''
             CREATE TABLE IF NOT EXISTS items (
@@ -76,12 +85,23 @@ def init_db():
         ''')
         conn.commit()
 
-        # Заполнение меню, если пусто
+        # Заполнение категорий, если пусто
         cursor = conn.cursor()
+        cursor.execute('SELECT COUNT(*) FROM categories')
+        if cursor.fetchone()[0] == 0:
+            categories = [
+                ('pizza', 'Пицца'),
+                ('pasta', 'Паста'),
+                ('drinks', 'Напитки'),
+                ('other', 'Другие')
+            ]
+            conn.executemany('INSERT INTO categories (value, name) VALUES (?, ?)', categories)
+            conn.commit()
+
+        # Заполнение меню, если пусто
         cursor.execute('SELECT COUNT(*) FROM items')
         if cursor.fetchone()[0] == 0:
             items = [
-
                 ('pizza', 'Маргарита', 'Томатный соус, моцарелла, свежий базилик, оливковое масло.', 550, 'https://mixthatdrink.com/wp-content/uploads/2023/03/classic-margarita-cocktail-540x720.jpg'),
                 ('pizza', 'Пепперони', 'Томатный соус, моцарелла, острая колбаска пепперони.', 550, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfdW8M3-Gps9QKZssNfNSiyn-ppKZmotyzug&s'),
                 ('pizza', 'Четыре Сыра', 'Сливочный соус, моцарелла, дорблю, пармезан, чеддер.', 550, 'https://cafebrynza.ru/goods/789.jpg'),
@@ -100,14 +120,15 @@ def migrate_db():
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
+
+        # === Миграция таблицы orders: добавляем столбец created_at ===
         cursor.execute("PRAGMA table_info(orders)")
         columns = [row[1] for row in cursor.fetchall()]
 
-        if 'user_name' not in columns:
-            app.logger.info("Migrating orders table...")
-            conn.execute('ALTER TABLE orders RENAME TO orders_old')
+        if 'created_at' not in columns:
+            app.logger.info("Migrating orders table: adding created_at column...")
             conn.execute('''
-                CREATE TABLE orders (
+                CREATE TABLE orders_new (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_name TEXT NOT NULL,
                     phone TEXT NOT NULL,
@@ -117,17 +138,36 @@ def migrate_db():
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
-            try:
-                conn.execute('''
-                    INSERT INTO orders (id, user_name, phone, items, total, status)
-                    SELECT id, name, phone, items, total, status FROM orders_old
-                ''')
-            except sqlite3.OperationalError as e:
-                app.logger.warning(f"Migration failed (old data incompatible): {e}")
-            finally:
-                conn.execute('DROP TABLE IF EXISTS orders_old')
-            conn.commit()
 
+            conn.execute('''
+                INSERT INTO orders_new (id, user_name, phone, items, total, status)
+                SELECT id, user_name, phone, items, total, status FROM orders
+            ''')
+
+            conn.execute('DROP TABLE orders')
+            conn.execute('ALTER TABLE orders_new RENAME TO orders')
+            conn.commit()
+            app.logger.info("Migration completed: created_at column added.")
+
+        # === Проверка и миграция для categories ===
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='categories'")
+        if not cursor.fetchone():
+            app.logger.info("Creating categories table...")
+            conn.execute('''
+                CREATE TABLE categories (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    value TEXT NOT NULL UNIQUE,
+                    name TEXT NOT NULL
+                )
+            ''')
+            categories = [
+                ('pizza', 'Пицца'),
+                ('pasta', 'Паста'),
+                ('drinks', 'Напитки'),
+                ('other', 'Другие')
+            ]
+            conn.executemany('INSERT INTO categories (value, name) VALUES (?, ?)', categories)
+            conn.commit()
 @app.route('/')
 def home():
     return send_from_directory('static', 'login.html')
@@ -150,25 +190,94 @@ def login():
     token = jwt.encode({'username': username}, SECRET_KEY, algorithm='HS256')
     return jsonify({'token': token})
 
+@app.route('/api/categories', methods=['GET'])
+def get_categories():
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    username, error, status = verify_token(token)
+    if error:
+        return jsonify(error), status
+
+    conn = get_db_connection()
+    categories = conn.execute('SELECT value, name FROM categories').fetchall()
+    conn.close()
+    return jsonify({'categories': [{'value': cat['value'], 'name': cat['name']} for cat in categories]})
+
+@app.route('/api/add-category', methods=['POST'])
+def add_category():
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    username, error, status = verify_token(token)
+    if error:
+        return jsonify(error), status
+
+    data = request.form
+    value = data.get('value')
+    name = data.get('name')
+
+    if not all([value, name]):
+        return jsonify({'error': 'Заполните все обязательные поля'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('INSERT INTO categories (value, name) VALUES (?, ?)', (value, name))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        return jsonify({'error': 'Категория с таким значением уже существует'}), 400
+    finally:
+        conn.close()
+    return jsonify({'message': 'Категория успешно добавлена'})
+
+@app.route('/api/remove-category', methods=['POST'])
+def remove_category():
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    username, error, status = verify_token(token)
+    if error:
+        return jsonify(error), status
+
+    category_value = request.form.get('category-id')
+    if not category_value:
+        return jsonify({'error': 'Выберите категорию для удаления'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT value FROM categories WHERE value = ?', (category_value,))
+    if not cursor.fetchone():
+        conn.close()
+        return jsonify({'error': 'Категория не найдена'}), 404
+
+    # Удаляем блюда из категории
+    cursor.execute('DELETE FROM items WHERE category = ?', (category_value,))
+    # Удаляем категорию
+    cursor.execute('DELETE FROM categories WHERE value = ?', (category_value,))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Категория и связанные блюда успешно удалены'})
+
 @app.route('/api/menu', methods=['GET'])
 def get_menu():
     conn = get_db_connection()
+    categories = conn.execute('SELECT value, name FROM categories').fetchall()
     items = conn.execute('SELECT * FROM items').fetchall()
     conn.close()
-    categories = {}
+
+    menu = {}
+    for cat in categories:
+        cat_value = cat['value']
+        menu[cat_value] = {'name': cat['name'], 'items': []}
+
     for item in items:
         cat = item['category']
-        if cat not in categories:
-            categories[cat] = []
-        categories[cat].append({
-            'id': item['id'],
-            'name': item['name'],
-            'description': item['description'],
-            'price': item['price'],
-            'image': item['image']
-        })
-    return jsonify({'categories': categories})
+        if cat in menu:
+            menu[cat]['items'].append({
+                'id': item['id'],
+                'name': item['name'],
+                'description': item['description'],
+                'price': item['price'],
+                'image': item['image']
+            })
 
+    return jsonify({'categories': menu})
 @app.route('/api/add-dish', methods=['POST'])
 def add_dish():
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
@@ -195,6 +304,12 @@ def add_dish():
 
     conn = get_db_connection()
     cursor = conn.cursor()
+    # Проверяем существование категории
+    cursor.execute('SELECT value FROM categories WHERE value = ?', (category,))
+    if not cursor.fetchone():
+        conn.close()
+        return jsonify({'error': 'Категория не найдена'}), 404
+
     cursor.execute('INSERT INTO items (category, name, description, price, image) VALUES (?, ?, ?, ?, ?)',
                    (category, name, description, price, image))
     conn.commit()
