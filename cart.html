@@ -4,38 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Корзина Доставки</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style type="text/tailwindcss">
         @layer components {
             .menu-category-title {
-                @apply text-4xl text-black tracking-tighter text-center border-b-[1.5px] mt-10 mb-5 pb-3;
+                @apply text-3xl md:text-4xl text-[#3b443d] font-bold tracking-tight text-center border-b-2 border-[#597e52]/40 mt-10 mb-6 pb-3;
             }
             .navelement {
-                @apply tracking-tighter text-xl text-gray-700 hover:text-[#597e52] font-medium p-2 rounded-md transition duration-150 ease-in-out border-x border-dashed;
+                @apply tracking-tight text-lg text-[#3b443d] hover:text-[#597e52] font-semibold px-4 py-2 rounded-lg transition duration-200 ease-in-out hover:bg-[#597e52]/10;
             }
             .cart-item-image {
                 @apply w-20 h-20 object-cover rounded-md flex-shrink-0 bg-gray-100;
             }
             .cart-item-name {
-                @apply text-xl font-medium tracking-tighter text-gray-800;
+                @apply text-lg md:text-xl font-bold tracking-tight text-[#3b443d];
+            }
+            .cart-item-price {
+                @apply text-base md:text-lg font-bold text-[#597e52];
             }
             .cart-item-price-total {
-                @apply text-xl md:text-2xl font-bold tracking-tighter text-black mt-2 md:mt-0;
+                @apply text-xl md:text-2xl font-bold tracking-tight text-[#597e52];
             }
             .cart-quantity-button {
-                @apply w-8 h-8 text-2xl leading-none flex items-center justify-center border rounded-md text-gray-700 transition duration-150 hover:bg-gray-100;
+                @apply w-9 h-9 text-xl leading-none flex items-center justify-center rounded-full text-[#597e52] transition duration-150 hover:bg-[#597e52] hover:text-white bg-white;
             }
             .checkout-button {
-                @apply w-full py-4 text-2xl font-bold rounded-lg bg-[#597e52] text-white transition-transform duration-300 hover:scale-[0.99] tracking-tighter;
+                @apply w-full py-4 text-xl md:text-2xl font-bold rounded-lg bg-[#597e52] text-white transition-all duration-300 hover:scale-[1.01] hover:bg-[#4a6945] tracking-tight shadow-lg;
             }
             .admin-input {
                 @apply w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#597e52] focus:border-transparent;
             }
             .admin-submit-button {
-                @apply w-full py-3 mt-4 bg-[#597e52] text-white font-bold rounded-md hover:bg-[#4a6b43] transition;
+                @apply w-full py-3 mt-4 bg-[#597e52] text-white font-bold rounded-md hover:bg-[#4a6945] transition-all duration-300;
             }
             .success-message { @apply text-green-600; }
             .error-message { @apply text-red-600; }
+            .payment-method-card {
+                @apply border-2 border-gray-300 rounded-lg p-4 cursor-pointer transition-all duration-300 hover:border-[#597e52] hover:shadow-lg hover:scale-[1.02];
+            }
+            .payment-method-card.selected {
+                @apply border-[#597e52] bg-[#597e52]/5 shadow-lg scale-[1.02];
+            }
+            .modal-overlay {
+                @apply fixed inset-0 bg-black flex items-center justify-center z-50 transition-all duration-300;
+            }
+            .modal-overlay.hidden {
+                @apply opacity-0 pointer-events-none;
+            }
+            .modal-overlay:not(.hidden) {
+                @apply opacity-100;
+            }
+            .modal-content {
+                @apply bg-white p-8 rounded-lg shadow-2xl w-full max-w-md mx-4 transition-all duration-300 transform;
+            }
+            .modal-overlay.hidden .modal-content {
+                @apply scale-90 opacity-0;
+            }
+            .modal-overlay:not(.hidden) .modal-content {
+                @apply scale-100 opacity-100;
+            }
         }
     </style>
     <script>
@@ -43,44 +73,36 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Arial', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
                     },
                 },
             },
         }
     </script>
 </head>
-<body class="bg-white text-black font-sans">
+<body class="bg-[#f4eee1] text-[#3b443d] font-sans">
 
 <div class="container mx-auto p-4 sm:p-10 max-w-7xl">
-    <h1 class="text-4xl sm:text-5xl font-bold text-center mb-10 sm:mb-12 tracking-tighter">Корзина</h1>
+    <h1 class="text-4xl sm:text-5xl font-bold text-center mb-10 sm:mb-12 tracking-tight">Корзина</h1>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-10">
         <div class="lg:col-span-2">
-            <h2 class="menu-category-title !text-left !text-3xl !mt-0 border-b-[2px]">Товары</h2>
+            <h2 class="menu-category-title !text-left !mt-0 !mb-4 border-b-2">Товары</h2>
             <div id="cart-items-list" class="space-y-6"></div>
         </div>
 
-        <div class="lg:col-span-1 border border-gray-300 p-6 rounded-lg self-start lg:sticky lg:top-10 shadow-md mt-8 lg:mt-0">
-            <h2 class="text-3xl font-bold tracking-tighter mb-6 border-b pb-3">Итоги Заказа</h2>
+        <div class="lg:col-span-1 border border-gray-300 p-6 rounded-lg self-start lg:sticky lg:top-10 shadow-lg mt-8 lg:mt-0 bg-white">
+            <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-6 border-b pb-3">Итоги Заказа</h2>
             <div class="space-y-3 mb-6">
-                <div class="flex justify-between text-xl tracking-tighter">
-                    <p class="text-gray-700">Подытог товаров:</p>
-                    <p id="subtotal" class="font-medium">0 ₽</p>
-                </div>
-                <div class="flex justify-between text-xl tracking-tighter">
-                    <p class="text-gray-700">Доставка:</p>
-                    <p class="font-medium text-[#597e52]">99 ₽</p>
-                </div>
-                <div class="flex justify-between text-xl tracking-tighter">
-                    <p class="text-gray-700">Скидка:</p>
-                    <p class="font-medium text-red-500">- 0 ₽</p>
+                <div class="flex justify-between items-center text-lg md:text-xl tracking-tight">
+                    <p class="text-[#3b443d]">Подытог товаров:</p>
+                    <p id="subtotal" class="font-bold text-[#3b443d]">0 ₽</p>
                 </div>
             </div>
             <div class="pt-4 border-t-2 border-dashed border-gray-300">
-                <div class="flex justify-between text-3xl font-bold tracking-tighter text-black">
-                    <p>Итого к оплате:</p>
-                    <p id="total" class="text-[#597e52]">0 ₽</p>
+                <div class="flex justify-between items-center">
+                    <p class="text-xl md:text-2xl font-bold tracking-tight text-[#3b443d]">Итого к оплате:</p>
+                    <p id="total" class="text-2xl md:text-3xl font-bold text-[#597e52]">0 ₽</p>
                 </div>
             </div>
             <button id="checkout-button" class="checkout-button mt-8">Перейти к оформлению</button>
@@ -91,9 +113,68 @@
     </div>
 </div>
 
-<!-- Модальное окно оформления -->
-<div id="checkout-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+<!-- Модальное окно выбора способа оплаты -->
+<div id="payment-modal" class="modal-overlay hidden" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-content">
+        <h2 class="text-2xl font-bold mb-6 text-center">Выберите способ оплаты</h2>
+
+        <div class="space-y-4">
+            <div class="payment-method-card" data-payment="cash">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-[#597e52]/10 rounded-full flex items-center justify-center transition-all duration-300">
+                        <svg class="w-6 h-6 text-[#597e52]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-bold text-lg">Наличные</p>
+                        <p class="text-sm text-gray-600">Оплата при получении</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-method-card" data-payment="click">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-[#597e52]/10 rounded-full flex items-center justify-center transition-all duration-300">
+                        <svg class="w-6 h-6 text-[#597e52]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-bold text-lg">Click</p>
+                        <p class="text-sm text-gray-600">Онлайн оплата</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-method-card" data-payment="payme">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-[#597e52]/10 rounded-full flex items-center justify-center transition-all duration-300">
+                        <svg class="w-6 h-6 text-[#597e52]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-bold text-lg">Payme</p>
+                        <p class="text-sm text-gray-600">Онлайн оплата</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button id="continue-to-checkout" class="admin-submit-button" disabled>
+            Продолжить
+        </button>
+
+        <button id="close-payment-modal" class="mt-4 w-full text-center text-red-500 hover:text-red-700 transition-colors duration-200">
+            Отмена
+        </button>
+    </div>
+</div>
+
+<!-- Модальное окно оформления заказа -->
+<div id="checkout-modal" class="modal-overlay hidden" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-content">
         <h2 class="text-2xl font-bold mb-4">Оформление заказа</h2>
         <form id="checkout-form">
             <div class="mb-4">
@@ -102,20 +183,26 @@
             </div>
             <div class="mb-4">
                 <label for="user-phone" class="block text-sm font-medium text-gray-700 mb-1">Номер телефона</label>
-                <input 
-                    type="tel" 
-                    id="user-phone" 
-                    name="phone" 
-                    class="admin-input" 
-                    placeholder="+998 (99) 999-99-99" 
-                    maxlength="19"
-                    required
+                <input
+                        type="tel"
+                        id="user-phone"
+                        name="phone"
+                        class="admin-input"
+                        placeholder="+998 (99) 999-99-99"
+                        maxlength="19"
+                        required
                 >
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Способ оплаты</label>
+                <div class="px-4 py-3 bg-[#597e52]/10 rounded-md transition-all duration-300">
+                    <p id="selected-payment-display" class="font-semibold text-[#597e52]"></p>
+                </div>
             </div>
             <button type="submit" class="admin-submit-button">Подтвердить заказ</button>
         </form>
         <div id="checkout-message" class="message mt-4"></div>
-        <button id="close-modal" class="mt-4 text-red-500 hover:text-red-700">Закрыть</button>
+        <button id="close-modal" class="mt-4 text-red-500 hover:text-red-700 transition-colors duration-200">Закрыть</button>
     </div>
 </div>
 
@@ -136,42 +223,48 @@
         localStorage.removeItem('tableNumber');
         window.location.href = './redirect.html';
     } else {
+        let selectedPaymentMethod = null;
+
         function createCartItem(item) {
             const div = document.createElement('div');
-            div.className = 'flex flex-col items-start p-4 border border-gray-200 rounded-lg shadow-sm transition duration-150 hover:shadow-md md:flex-row md:items-center';
+            div.className = 'flex flex-col p-4 bg-white border border-gray-200 rounded-xl shadow-sm transition duration-150 hover:shadow-lg';
             div.dataset.id = item.id;
+
+            const topSection = document.createElement('div');
+            topSection.className = 'flex items-start gap-4';
 
             const img = document.createElement('img');
             img.src = item.image || 'src/images/placeholder.jpg';
             img.alt = item.name;
-            img.className = 'cart-item-image mb-4 md:mb-0';
-            div.appendChild(img);
+            img.className = 'cart-item-image';
+            topSection.appendChild(img);
 
             const info = document.createElement('div');
-            info.className = 'flex-grow mt-4 md:mt-0 md:mx-6 w-full';
+            info.className = 'flex-grow min-w-0';
 
             const name = document.createElement('p');
-            name.className = 'cart-item-name';
+            name.className = 'cart-item-name mb-1';
             name.textContent = item.name;
             info.appendChild(name);
 
             const desc = document.createElement('p');
-            desc.className = 'text-gray-500 text-sm';
+            desc.className = 'text-[#3b443d]/70 text-sm leading-relaxed line-clamp-2 mb-2';
             desc.textContent = item.description;
             info.appendChild(desc);
 
             const price = document.createElement('p');
-            price.className = 'text-lg font-medium text-gray-700 mt-1';
+            price.className = 'cart-item-price';
             price.textContent = `${item.price} ₽`;
             info.appendChild(price);
 
-            div.appendChild(info);
+            topSection.appendChild(info);
+            div.appendChild(topSection);
 
-            const controlsAndTotal = document.createElement('div');
-            controlsAndTotal.className = 'flex flex-row items-center justify-between w-full mt-4 pt-4 border-t md:flex-col md:w-auto md:border-t-0 md:pt-0 md:mt-0';
+            const bottomSection = document.createElement('div');
+            bottomSection.className = 'flex items-center justify-between mt-4 pt-4 border-t border-gray-200';
 
             const quantityDiv = document.createElement('div');
-            quantityDiv.className = 'flex items-center space-x-3 flex-shrink-0';
+            quantityDiv.className = 'flex items-center gap-3 bg-[#597e52]/10 rounded-full px-2 py-1';
 
             const minus = document.createElement('button');
             minus.className = 'cart-quantity-button';
@@ -180,7 +273,7 @@
             quantityDiv.appendChild(minus);
 
             const qtySpan = document.createElement('span');
-            qtySpan.className = 'text-xl font-medium';
+            qtySpan.className = 'text-lg font-bold text-[#3b443d] min-w-[32px] text-center';
             qtySpan.textContent = item.quantity;
             quantityDiv.appendChild(qtySpan);
 
@@ -190,14 +283,18 @@
             plus.onclick = () => updateQuantity(item.id, 1);
             quantityDiv.appendChild(plus);
 
-            controlsAndTotal.appendChild(quantityDiv);
+            bottomSection.appendChild(quantityDiv);
+
+            const rightSection = document.createElement('div');
+            rightSection.className = 'flex items-center gap-3';
 
             const totalPrice = document.createElement('p');
-            totalPrice.className = 'cart-item-price-total flex-shrink-0 text-right';
+            totalPrice.className = 'cart-item-price-total';
             totalPrice.textContent = `${item.price * item.quantity} ₽`;
+            rightSection.appendChild(totalPrice);
 
             const removeBtn = document.createElement('button');
-            removeBtn.className = 'text-red-500 hover:text-red-700 transition duration-150 ml-4';
+            removeBtn.className = 'text-red-500 hover:text-red-700 transition duration-150';
             removeBtn.onclick = () => removeItem(item.id);
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             svg.className = 'h-6 w-6';
@@ -211,32 +308,10 @@
             path.setAttribute('d', 'M6 18L18 6M6 6l12 12');
             svg.appendChild(path);
             removeBtn.appendChild(svg);
+            rightSection.appendChild(removeBtn);
 
-            const priceAndRemove = document.createElement('div');
-            priceAndRemove.className = 'flex items-center space-x-4 mt-2 md:mt-0';
-            priceAndRemove.appendChild(totalPrice);
-            priceAndRemove.appendChild(removeBtn);
-            controlsAndTotal.appendChild(priceAndRemove);
-
-            div.appendChild(controlsAndTotal);
-
-            if (window.innerWidth >= 768) {
-                div.className = 'flex items-center p-4 border border-gray-200 rounded-lg shadow-sm transition duration-150 hover:shadow-md';
-                controlsAndTotal.className = 'flex items-center space-x-3 flex-shrink-0 mr-6';
-                controlsAndTotal.innerHTML = '';
-                controlsAndTotal.appendChild(minus);
-                controlsAndTotal.appendChild(qtySpan);
-                controlsAndTotal.appendChild(plus);
-                div.innerHTML = '';
-                div.appendChild(img);
-                div.appendChild(info);
-                div.appendChild(controlsAndTotal);
-                div.appendChild(totalPrice);
-                div.appendChild(removeBtn);
-            } else {
-                info.className = 'flex-grow mt-2 md:mt-0 md:mx-6 w-full';
-                info.removeChild(price);
-            }
+            bottomSection.appendChild(rightSection);
+            div.appendChild(bottomSection);
 
             return div;
         }
@@ -256,8 +331,7 @@
                 cart[itemIndex].quantity += delta;
                 if (cart[itemIndex].quantity <= 0) cart.splice(itemIndex, 1);
                 localStorage.setItem('cart', JSON.stringify(cart));
-                updateCartItemDisplay(id);
-                updateTotals();
+                loadCart();
             }
         }
 
@@ -265,90 +339,152 @@
             let cart = JSON.parse(localStorage.getItem('cart')) || [];
             cart = cart.filter(i => i.id !== id);
             localStorage.setItem('cart', JSON.stringify(cart));
-            const div = document.querySelector(`[data-id="${id}"]`);
-            if (div) div.remove();
-            updateTotals();
-        }
-
-        function updateCartItemDisplay(id) {
-            const cart = JSON.parse(localStorage.getItem('cart')) || [];
-            const item = cart.find(i => i.id === id);
-            const div = document.querySelector(`[data-id="${id}"]`);
-            if (!div || !item || item.quantity <= 0) {
-                if (div) div.remove();
-                return;
-            }
-            const qtySpan = div.querySelector('.text-xl.font-medium');
-            if (qtySpan) qtySpan.textContent = item.quantity;
-            const totalPrice = div.querySelector('.cart-item-price-total');
-            if (totalPrice) totalPrice.textContent = `${item.price * item.quantity} ₽`;
+            loadCart();
         }
 
         function updateTotals() {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-            const delivery = 99;
+            const delivery = 0;
             const discount = 0;
             const total = subtotal + delivery - discount;
+
             document.getElementById('subtotal').textContent = `${subtotal} ₽`;
             document.getElementById('total').textContent = `${total} ₽`;
         }
 
+        // Функция для плавного открытия модального окна
+        function openModal(modal) {
+            modal.classList.remove('hidden');
+            // Даем браузеру время для рендера, чтобы transition сработал
+            setTimeout(() => {
+                modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            }, 10);
+        }
+
+        // Функция для плавного закрытия модального окна
+        function closeModal(modal) {
+            modal.style.backgroundColor = 'rgba(0, 0, 0, 0)';
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
         const checkoutButton = document.getElementById('checkout-button');
+        const paymentModal = document.getElementById('payment-modal');
         const checkoutModal = document.getElementById('checkout-modal');
-        const closeModal = document.getElementById('close-modal');
+        const closePaymentModal = document.getElementById('close-payment-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+        const continueToCheckout = document.getElementById('continue-to-checkout');
         const checkoutForm = document.getElementById('checkout-form');
         const checkoutMessage = document.getElementById('checkout-message');
 
+        // Открыть модальное окно выбора оплаты
         checkoutButton.addEventListener('click', () => {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             if (cart.length === 0) {
                 alert('Корзина пуста');
                 return;
             }
-            checkoutModal.classList.remove('hidden');
+            openModal(paymentModal);
         });
 
-        closeModal.addEventListener('click', () => {
-            checkoutModal.classList.add('hidden');
-            checkoutMessage.textContent = '';
+        // Закрыть модальное окно выбора оплаты
+        closePaymentModal.addEventListener('click', () => {
+            closeModal(paymentModal);
+            setTimeout(() => {
+                selectedPaymentMethod = null;
+                document.querySelectorAll('.payment-method-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                continueToCheckout.disabled = true;
+            }, 300);
         });
 
-// === МАСКА ТЕЛЕФОНА +998 (99) 999-99-99 ===
-const phoneInput = document.getElementById('user-phone');
+        // Закрыть модальное окно при клике на затемненный фон
+        paymentModal.addEventListener('click', (e) => {
+            if (e.target === paymentModal) {
+                closePaymentModal.click();
+            }
+        });
 
-phoneInput.addEventListener('input', function (e) {
-    let value = e.target.value.replace(/\D/g, ''); // Только цифры
+        checkoutModal.addEventListener('click', (e) => {
+            if (e.target === checkoutModal) {
+                closeModalBtn.click();
+            }
+        });
 
-    // Принудительно начинаем с 998
-    if (!value.startsWith('998')) {
-        value = '998' + value.replace(/^998/, '');
-    }
-    if (value.length > 12) value = value.slice(0, 12);
+        // Выбор способа оплаты
+        document.querySelectorAll('.payment-method-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.payment-method-card').forEach(c => {
+                    c.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                selectedPaymentMethod = this.dataset.payment;
+                continueToCheckout.disabled = false;
+            });
+        });
 
-    let formatted = '+998 ';
-    if (value.length > 3) formatted += '(' + value.slice(3, 5);
-    if (value.length >= 5) formatted += ') ' + value.slice(5, 8);
-    if (value.length >= 8) formatted += '-' + value.slice(8, 10);
-    if (value.length >= 10) formatted += '-' + value.slice(10, 12);
+        // Продолжить к оформлению
+        continueToCheckout.addEventListener('click', () => {
+            if (!selectedPaymentMethod) return;
 
-    e.target.value = formatted;
-});
+            const paymentNames = {
+                'cash': 'Наличные',
+                'click': 'Click',
+                'payme': 'Payme'
+            };
 
-phoneInput.addEventListener('focus', function (e) {
-    if (!e.target.value) {
-        e.target.value = '+998 (';
-    }
-});
+            document.getElementById('selected-payment-display').textContent = paymentNames[selectedPaymentMethod];
 
-phoneInput.addEventListener('blur', function (e) {
-    const val = e.target.value;
-    if (val === '+998 (' || val === '+998' || val.length < 17) {
-        e.target.value = '';
-    }
-});
+            closeModal(paymentModal);
+            setTimeout(() => {
+                openModal(checkoutModal);
+            }, 300);
+        });
 
-        // === ОТПРАВКА ЗАКАЗА ===
+        // Закрыть модальное окно оформления
+        closeModalBtn.addEventListener('click', () => {
+            closeModal(checkoutModal);
+            setTimeout(() => {
+                checkoutMessage.textContent = '';
+                checkoutForm.reset();
+            }, 300);
+        });
+
+        const phoneInput = document.getElementById('user-phone');
+
+        phoneInput.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+
+            if (!value.startsWith('998')) {
+                value = '998' + value.replace(/^998/, '');
+            }
+            if (value.length > 12) value = value.slice(0, 12);
+
+            let formatted = '+998 ';
+            if (value.length > 3) formatted += '(' + value.slice(3, 5);
+            if (value.length >= 5) formatted += ') ' + value.slice(5, 8);
+            if (value.length >= 8) formatted += '-' + value.slice(8, 10);
+            if (value.length >= 10) formatted += '-' + value.slice(10, 12);
+
+            e.target.value = formatted;
+        });
+
+        phoneInput.addEventListener('focus', function (e) {
+            if (!e.target.value) {
+                e.target.value = '+998 (';
+            }
+        });
+
+        phoneInput.addEventListener('blur', function (e) {
+            const val = e.target.value;
+            if (val === '+998 (' || val === '+998' || val.length < 17) {
+                e.target.value = '';
+            }
+        });
+
         checkoutForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
@@ -365,6 +501,7 @@ phoneInput.addEventListener('blur', function (e) {
             const data = {
                 user_name: formData.get('user_name'),
                 phone: phone,
+                payment_method: selectedPaymentMethod,
                 cart: JSON.parse(localStorage.getItem('cart')) || []
             };
 
@@ -378,9 +515,12 @@ phoneInput.addEventListener('blur', function (e) {
 
                 if (response.ok) {
                     localStorage.removeItem('cart');
+                    selectedPaymentMethod = null;
                     loadCart();
-                    checkoutModal.classList.add('hidden');
-                    window.location.href = 'index.html?modal=ordered';
+                    closeModal(checkoutModal);
+                    setTimeout(() => {
+                        window.location.href = 'index.html?modal=ordered';
+                    }, 300);
                 } else {
                     checkoutMessage.textContent = result.error || 'Ошибка создания заказа';
                     checkoutMessage.classList.add('error-message');
@@ -390,12 +530,6 @@ phoneInput.addEventListener('blur', function (e) {
                 checkoutMessage.classList.add('error-message');
                 console.error('Fetch error:', error);
             }
-        });
-
-        let resizeTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(loadCart, 250);
         });
 
         window.addEventListener('DOMContentLoaded', loadCart);

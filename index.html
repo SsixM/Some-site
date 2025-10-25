@@ -47,7 +47,7 @@
             }
 
             .quantity-controls {
-                @apply flex items-center gap-2 bg-[#597e52]/10 rounded-full p-1;
+                @apply flex items-center justify-between gap-2 bg-[#597e52]/10 rounded-full p-1;
             }
 
             .quantity-btn {
@@ -69,7 +69,8 @@
                 @apply opacity-100 translate-y-0;
             }
             #floating-cart-btn {
-                @apply transition-all duration-300;
+                /* ИЗМЕНЕНИЕ: Стили для плавающей кнопки корзины */
+                @apply fixed bottom-6 right-6 z-50;
             }
 
             #cart-btn:hover {
@@ -100,7 +101,7 @@
 
     <div class="sticky top-0 z-10 bg-white shadow-md border-b border-gray-200">
         <div class="container mx-auto max-w-7xl px-4">
-            <nav class="flex w-full justify-start md:justify-center overflow-x-auto overflow-y-none space-x-2 py-3">
+            <nav class="flex w-full justify-start md:justify-center overflow-x-auto overflow-y-none space-x-2 py-3 pr-20 md:pr-0">
             </nav>
         </div>
     </div>
@@ -119,7 +120,7 @@
 </div>
 <div id="notification-container"></div>
 
-<div id="floating-cart-btn" class="fixed top-6 right-6 z-40">
+<div id="floating-cart-btn" class="transition-all duration-300">
     <button id="cart-btn" class="relative w-14 h-14 bg-[#597e52] text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 7.5M7 13l1.5 7.5M16 13l1.5 7.5"></path>
@@ -443,7 +444,8 @@
                 let current = '';
                 sections.forEach(section => {
                     const sectionTop = section.offsetTop;
-                    if (window.pageYOffset >= sectionTop - 60) {
+                    // Скорректирован отступ для определения текущей секции, учитывая высоту фиксированной навигации
+                    if (window.pageYOffset >= sectionTop - 120) {
                         current = section.querySelector('h2').getAttribute('id');
                     }
                 });
