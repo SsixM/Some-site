@@ -43,6 +43,9 @@
             .error-message {
                 @apply text-red-500;
             }
+            .payment-status-select {
+                @apply w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#597e52];
+            }
         }
     </style>
     <script>
@@ -183,48 +186,121 @@
                         ordersContainer.innerHTML = '';
                         data.orders.forEach(order => {
                             const orderDiv = document.createElement('div');
-                            orderDiv.className = 'p-4 border rounded-md bg-gray-50 shadow-sm mb-4';
+                            orderDiv.className = 'p-4 border rounded-md bg-gray-50 shadow-sm mb-4 grid grid-cols-1 lg:grid-cols-3 gap-4';
                             orderDiv.innerHTML = `
-                            <p class="font-bold text-lg mb-1">Заказ #${order.id}</p>
-                            <p>Имя: ${order.user_name}</p>
-                            <p>Номер телефона: ${order.phone}</p>
-                            <p>Сумма: ${order.total} ₽</p>
-                            <p class="mb-2">Статус: <span class="${order.status === 'new' ? 'text-green-600' : order.status === 'in_progress' ? 'text-yellow-600' : 'text-red-600'} font-medium">${order.status === 'new' ? 'Новый' : order.status === 'in_progress' ? 'В процессе' : 'Закрыт'}</span></p>
-                            <button class="order-details-toggle-button" data-order-id="${order.id}">Показать детали</button>
-                            <div id="details-${order.id}" class="hidden mt-3 pt-3 border-t border-gray-200">
-                                <p class="font-semibold mb-1">Состав заказа:</p>
-                                <ul class="list-disc list-inside ml-2 text-sm text-gray-800 space-y-0.5">
-                                    ${order.items.map(item => `<li>${item.name} x ${item.quantity} - ${item.price * item.quantity} ₽</li>`).join('')}
-                                </ul>
-                            </div>
-                        `;
-                            const actionsDiv = document.createElement('div');
-                            actionsDiv.className = 'mt-4 space-x-2';
-                            if (order.status === 'new') {
-                                const takeButton = document.createElement('button');
-                                takeButton.className = 'bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700';
-                                takeButton.textContent = 'Взять заказ';
-                                takeButton.onclick = () => takeOrder(order.id);
-                                actionsDiv.appendChild(takeButton);
-                            }
-                            if (order.status !== 'closed') {
-                                const closeButton = document.createElement('button');
-                                closeButton.className = 'bg-red-500 text-white p-2 rounded-md hover:bg-red-700';
-                                closeButton.textContent = 'Закрыть заказ';
-                                closeButton.onclick = () => closeOrder(order.id);
-                                actionsDiv.appendChild(closeButton);
-                            }
-                            orderDiv.appendChild(actionsDiv);
+                                <div class="col-span-1">
+                                    <p class="font-bold text-lg mb-1">Заказ #${order.id}</p>
+                                    <p>Столик: ${order.table_number}</p>
+                                    <p>Время заказа: ${new Date(order.timestamp).toLocaleString('ru-RU')}</p>
+                                    <p>Имя: ${order.user_name}</p>
+                                    <p>Номер телефона: ${order.phone}</p>
+                                    <p>Метод оплаты: ${order.payment_method === 'cash' ? 'Наличные/Карта' : order.payment_method.charAt(0).toUpperCase() + order.payment_method.slice(1)}</p>
+                                    <p>Статус оплаты: <span class="${order.payment_status === 'Оплачен' ? 'text-green-600' : order.payment_status === 'Оплата при выезде' ? 'text-blue-600' : 'text-red-600'} font-medium">${order.payment_status}</span></p>
+                                    ${order.payment_status === 'Оплата при выезде' && order.payment_comment ? `<p>Комментарий: ${order.payment_comment}</p>` : ''}
+                                    <div class="mt-2">
+                                        <select class="payment-status-select" data-order-id="${order.id}">
+                                            <option value="Оплачен" ${order.payment_status === 'Оплачен' ? 'selected' : ''}>Оплачен</option>
+                                            <option value="Не оплачен" ${order.payment_status === 'Не оплачен' ? 'selected' : ''}>Не оплачен</option>
+                                            <option value="Оплата при выезде" ${order.payment_status === 'Оплата при выезде' ? 'selected' : ''}>Оплата при выезде</option>
+                                        </select>
+                                        ${order.payment_status === 'Оплата при выезде' ? `
+                                            <input type="text" class="admin-input mt-2 payment-comment" placeholder="ФИО для оплаты при выезде" value="${order.payment_comment || ''}">
+                                        ` : ''}
+                                    </div>
+                                    <p class="mb-2 mt-2">Статус заказа: <span class="${order.status === 'new' ? 'text-green-600' : order.status === 'in_progress' ? 'text-yellow-600' : 'text-red-600'} font-medium">${order.status === 'new' ? 'Новый' : order.status === 'in_progress' ? 'В процессе' : 'Закрыт'}</span></p>
+                                    <div class="mt-4 space-x-2">
+                                        ${order.status === 'new' ? `<button class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700" onclick="window.takeOrder(${order.id})">Взять заказ</button>` : ''}
+                                        ${order.status !== 'closed' ? `<button class="bg-red-500 text-white p-2 rounded-md hover:bg-red-700" onclick="window.closeOrder(${order.id})">Закрыть заказ</button>` : ''}
+                                    </div>
+                                </div>
+                                <div class="col-span-2">
+                                    <p class="font-semibold mb-1">Состав заказа:</p>
+                                    <ul class="list-disc list-inside ml-2 text-sm text-gray-800 space-y-0.5">
+                                        ${order.items.map(item => `<li>${item.name} x ${item.quantity} - ${item.price * item.quantity} ₽</li>`).join('')}
+                                    </ul>
+                                </div>
+                            `;
                             ordersContainer.appendChild(orderDiv);
-                            const toggleButton = orderDiv.querySelector('.order-details-toggle-button');
-                            toggleButton.addEventListener('click', () => {
-                                const detailsDiv = document.getElementById(`details-${order.id}`);
-                                detailsDiv.classList.toggle('hidden');
-                                toggleButton.textContent = detailsDiv.classList.contains('hidden') ? 'Показать детали' : 'Скрыть детали';
+                            const select = orderDiv.querySelector('.payment-status-select');
+                            const commentInput = orderDiv.querySelector('.payment-comment');
+                            select.addEventListener('change', async () => {
+                                const paymentStatus = select.value;
+                                let paymentComment = '';
+                                if (paymentStatus === 'Оплата при выезде') {
+                                    if (!commentInput) {
+                                        const input = document.createElement('input');
+                                        input.type = 'text';
+                                        input.className = 'admin-input mt-2 payment-comment';
+                                        input.placeholder = 'ФИО для оплаты при выезде';
+                                        select.parentElement.appendChild(input);
+                                        input.addEventListener('change', () => updatePaymentStatus(order.id, paymentStatus, input.value));
+                                        return;
+                                    }
+                                    paymentComment = commentInput.value;
+                                } else if (commentInput) {
+                                    commentInput.remove();
+                                }
+                                await updatePaymentStatus(order.id, paymentStatus, paymentComment);
                             });
+                            if (commentInput) {
+                                commentInput.addEventListener('change', () => updatePaymentStatus(order.id, select.value, commentInput.value));
+                            }
                         });
                     } catch (error) {
                         console.error('Error loading orders:', error);
+                    }
+                }
+                async function updatePaymentStatus(orderId, paymentStatus, paymentComment) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:3000/api/update-payment-status/${orderId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ payment_status: paymentStatus, payment_comment: paymentComment })
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            loadOrders();
+                        } else {
+                            alert(data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error updating payment status:', error);
+                        alert('Ошибка соединения с сервером');
+                    }
+                }
+                window.takeOrder = async function(orderId) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:3000/api/take-order/${orderId}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            loadOrders();
+                        } else {
+                            alert(data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error taking order:', error);
+                    }
+                }
+                window.closeOrder = async function(orderId) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:3000/api/close-order/${orderId}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            loadOrders();
+                        } else {
+                            alert(data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error closing order:', error);
                     }
                 }
                 function GenerateQR(myUrl) {
@@ -276,38 +352,6 @@
                         console.error('Fetch error:', error);
                     }
                 });
-                async function takeOrder(orderId) {
-                    try {
-                        const response = await fetch(`http://127.0.0.1:3000/api/take-order/${orderId}`, {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        const data = await response.json();
-                        if (response.ok) {
-                            loadOrders();
-                        } else {
-                            alert(data.error);
-                        }
-                    } catch (error) {
-                        console.error('Error taking order:', error);
-                    }
-                }
-                async function closeOrder(orderId) {
-                    try {
-                        const response = await fetch(`http://127.0.0.1:3000/api/close-order/${orderId}`, {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        const data = await response.json();
-                        if (response.ok) {
-                            loadOrders();
-                        } else {
-                            alert(data.error);
-                        }
-                    } catch (error) {
-                        console.error('Error closing order:', error);
-                    }
-                }
                 addDishForm.addEventListener('submit', async function(event) {
                     event.preventDefault();
                     addDishMessage.textContent = '';
@@ -406,16 +450,12 @@
                             }
                             if (targetTab === 'orders') {
                                 loadOrders();
+                            } else if (targetTab === 'dishes' || targetTab === 'categories') {
+                                loadCategories();
                             }
                         }
                     });
                 }
-                tabsContainer.addEventListener('click', (event) => {
-                    const button = event.target.closest('.admin-tab-button');
-                    if (button) {
-                        switchTab(button.dataset.tab);
-                    }
-                });
                 function switchSubTab(targetSubTab, contextPanel) {
                     const subTabButtons = contextPanel.querySelectorAll('.admin-sub-tab-button');
                     subTabButtons.forEach(button => {
@@ -447,6 +487,12 @@
                         }
                     }
                 });
+                tabsContainer.addEventListener('click', (event) => {
+                    const button = event.target.closest('.admin-tab-button');
+                    if (button) {
+                        switchTab(button.dataset.tab);
+                    }
+                });
                 switchTab('orders');
                 document.getElementById('logout').addEventListener('click', async function() {
                     localStorage.removeItem('token');
@@ -475,8 +521,7 @@
         <section id="orders-content" data-tab-content class="space-y-6">
             <h2 class="admin-content-title">Актуальные Заказы</h2>
             <div class="admin-card space-y-4">
-                <div id="orders-list" class="space-y-4">
-                </div>
+                <div id="orders-list" class="space-y-4"></div>
             </div>
         </section>
         <section id="dishes-content" data-tab-content class="space-y-6 hidden">

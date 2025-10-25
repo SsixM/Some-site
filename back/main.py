@@ -74,7 +74,11 @@ def init_db():
                 items TEXT NOT NULL,
                 total INTEGER NOT NULL,
                 status TEXT NOT NULL DEFAULT 'new',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                payment_method TEXT NOT NULL,
+                payment_status TEXT NOT NULL,
+                table_number TEXT NOT NULL,
+                payment_comment TEXT
             )
         ''')
         conn.commit()
@@ -112,7 +116,7 @@ def migrate_db():
         cursor.execute("PRAGMA table_info(orders)")
         columns = [row[1] for row in cursor.fetchall()]
         if 'created_at' not in columns:
-            app.logger.info("Migrating orders table: adding created_at column...")
+            app.logger.info("Migrating orders table: adding new columns...")
             conn.execute('''
                 CREATE TABLE orders_new (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -121,7 +125,11 @@ def migrate_db():
                     items TEXT NOT NULL,
                     total INTEGER NOT NULL,
                     status TEXT NOT NULL DEFAULT 'new',
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    payment_method TEXT NOT NULL,
+                    payment_status TEXT NOT NULL,
+                    table_number TEXT NOT NULL,
+                    payment_comment TEXT
                 )
             ''')
             conn.execute('''
@@ -131,7 +139,18 @@ def migrate_db():
             conn.execute('DROP TABLE orders')
             conn.execute('ALTER TABLE orders_new RENAME TO orders')
             conn.commit()
-            app.logger.info("Migration completed: created_at column added.")
+            app.logger.info("Migration completed: new columns added.")
+        else:
+            if 'payment_method' not in columns:
+                conn.execute('ALTER TABLE orders ADD COLUMN payment_method TEXT')
+            if 'payment_status' not in columns:
+                conn.execute('ALTER TABLE orders ADD COLUMN payment_status TEXT')
+            if 'table_number' not in columns:
+                conn.execute('ALTER TABLE orders ADD COLUMN table_number TEXT')
+            if 'payment_comment' not in columns:
+                conn.execute('ALTER TABLE orders ADD COLUMN payment_comment TEXT')
+            conn.commit()
+
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='categories'")
         if not cursor.fetchone():
             app.logger.info("Creating categories table...")
@@ -313,7 +332,7 @@ def generate_table_link():
         return jsonify({'error': 'Укажите локацию'}), 400
     table_token = jwt.encode({'location': location}, SECRET_KEY, algorithm='HS256')
     link = f'file:///C:/Users/slava/Desktop/Defency/Some-site/redirect.html?lots={table_token}'
-    return jsonify({'link': link})
+    return jsonify({'link': link, 'table_number': location})
 
 @app.route('/api/verify-table', methods=['POST'])
 def verify_table():
@@ -321,8 +340,8 @@ def verify_table():
     if not table_token:
         return jsonify({'error': 'Локация отсутствует'}), 400
     try:
-        jwt.decode(table_token, SECRET_KEY, algorithms=['HS256'])
-        return jsonify({'message': 'Токен валиден'})
+        data = jwt.decode(table_token, SECRET_KEY, algorithms=['HS256'])
+        return jsonify({'message': 'Токен валиден', 'table_number': data['location']})
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Неверная локация'}), 400
 
@@ -332,20 +351,27 @@ def create_order():
     user_name = data.get('user_name')
     phone = data.get('phone')
     cart = data.get('cart')
-    if not all([user_name, phone, cart]):
+    payment_method = data.get('payment_method')
+    table_number = data.get('table_number')
+
+    if not all([user_name, phone, cart, payment_method, table_number]):
         return jsonify({'error': 'Заполните все поля'}), 400
+
+    payment_status = 'Оплачен' if payment_method in ['click', 'payme'] else 'Не оплачен'
+
     try:
         total = sum(item['price'] * item['quantity'] for item in cart)
     except Exception as e:
         app.logger.error(f"Invalid cart format: {e}")
         return jsonify({'error': 'Неверный формат корзины'}), 400
+
     items_json = json.dumps(cart)
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO orders (user_name, phone, items, total, status)
-        VALUES (?, ?, ?, ?, 'new')
-    ''', (user_name, phone, items_json, total))
+        INSERT INTO orders (user_name, phone, items, total, status, payment_method, payment_status, table_number)
+        VALUES (?, ?, ?, ?, 'new', ?, ?, ?)
+    ''', (user_name, phone, items_json, total, payment_method, payment_status, table_number))
     conn.commit()
     order_id = cursor.lastrowid
     conn.close()
@@ -369,7 +395,11 @@ def get_orders():
             'items': json.loads(order['items']),
             'total': order['total'],
             'status': order['status'],
-            'timestamp': order['created_at']
+            'timestamp': order['created_at'],
+            'payment_method': order['payment_method'],
+            'payment_status': order['payment_status'],
+            'table_number': order['table_number'],
+            'payment_comment': order['payment_comment']
         })
     return jsonify({'orders': orders_list})
 
@@ -414,6 +444,33 @@ def close_order(order_id):
     conn.commit()
     conn.close()
     return jsonify({'message': 'Заказ закрыт'})
+
+@app.route('/api/update-payment-status/<int:order_id>', methods=['POST'])
+def update_payment_status(order_id):
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    username, error, status = verify_token(token)
+    if error:
+        return jsonify(error), status
+    data = request.json
+    payment_status = data.get('payment_status')
+    payment_comment = data.get('payment_comment', '')
+    if not payment_status:
+        return jsonify({'error': 'Не указан статус оплаты'}), 400
+    if payment_status not in ['Оплачен', 'Не оплачен', 'Оплата при выезде']:
+        return jsonify({'error': 'Неверный статус оплаты'}), 400
+    if payment_status == 'Оплата при выезде' and not payment_comment:
+        return jsonify({'error': 'Комментарий обязателен для статуса "Оплата при выезде"'}), 400
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id FROM orders WHERE id = ?', (order_id,))
+    if not cursor.fetchone():
+        conn.close()
+        return jsonify({'error': 'Заказ не найден'}), 404
+    cursor.execute('UPDATE orders SET payment_status = ?, payment_comment = ? WHERE id = ?',
+                   (payment_status, payment_comment, order_id))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Статус оплаты обновлен'})
 
 @app.route('/logout')
 def logout():

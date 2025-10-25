@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Корзина Доставки</title>
+    <title>Корзина</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -40,8 +40,12 @@
             .admin-submit-button {
                 @apply w-full py-3 mt-4 bg-[#597e52] text-white font-bold rounded-md hover:bg-[#4a6945] transition-all duration-300;
             }
-            .success-message { @apply text-green-600; }
-            .error-message { @apply text-red-600; }
+            .success-message {
+                @apply text-green-600;
+            }
+            .error-message {
+                @apply text-red-600;
+            }
             .payment-method-card {
                 @apply border-2 border-gray-300 rounded-lg p-4 cursor-pointer transition-all duration-300 hover:border-[#597e52] hover:shadow-lg hover:scale-[1.02];
             }
@@ -81,22 +85,23 @@
     </script>
 </head>
 <body class="bg-[#f4eee1] text-[#3b443d] font-sans">
-
 <div class="container mx-auto p-4 sm:p-10 max-w-7xl">
     <h1 class="text-4xl sm:text-5xl font-bold text-center mb-10 sm:mb-12 tracking-tight">Корзина</h1>
-
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-10">
         <div class="lg:col-span-2">
             <h2 class="menu-category-title !text-left !mt-0 !mb-4 border-b-2">Товары</h2>
             <div id="cart-items-list" class="space-y-6"></div>
         </div>
-
         <div class="lg:col-span-1 border border-gray-300 p-6 rounded-lg self-start lg:sticky lg:top-10 shadow-lg mt-8 lg:mt-0 bg-white">
             <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-6 border-b pb-3">Итоги Заказа</h2>
             <div class="space-y-3 mb-6">
                 <div class="flex justify-between items-center text-lg md:text-xl tracking-tight">
                     <p class="text-[#3b443d]">Подытог товаров:</p>
                     <p id="subtotal" class="font-bold text-[#3b443d]">0 ₽</p>
+                </div>
+                <div class="flex justify-between items-center text-lg md:text-xl tracking-tight">
+                    <p class="text-[#3b443d]">Номер столика:</p>
+                    <p id="table-number-display" class="font-bold text-[#3b443d]"></p>
                 </div>
             </div>
             <div class="pt-4 border-t-2 border-dashed border-gray-300">
@@ -107,17 +112,14 @@
             </div>
             <button id="checkout-button" class="checkout-button mt-8">Перейти к оформлению</button>
             <div class="text-center mt-4">
-                <a href="index.html" class="navelement !border-none !p-0">← Продолжить покупки</a>
+                <a href="index.html?modal=ordered" class="navelement !border-none !p-0">← Продолжить покупки</a>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Модальное окно выбора способа оплаты -->
 <div id="payment-modal" class="modal-overlay hidden" style="background-color: rgba(0, 0, 0, 0.5);">
     <div class="modal-content">
         <h2 class="text-2xl font-bold mb-6 text-center">Выберите способ оплаты</h2>
-
         <div class="space-y-4">
             <div class="payment-method-card" data-payment="cash">
                 <div class="flex items-center gap-4">
@@ -127,12 +129,11 @@
                         </svg>
                     </div>
                     <div>
-                        <p class="font-bold text-lg">Наличные</p>
+                        <p class="font-bold text-lg">Наличные/Карта</p>
                         <p class="text-sm text-gray-600">Оплата при получении</p>
                     </div>
                 </div>
             </div>
-
             <div class="payment-method-card" data-payment="click">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-[#597e52]/10 rounded-full flex items-center justify-center transition-all duration-300">
@@ -146,7 +147,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="payment-method-card" data-payment="payme">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-[#597e52]/10 rounded-full flex items-center justify-center transition-all duration-300">
@@ -161,18 +161,10 @@
                 </div>
             </div>
         </div>
-
-        <button id="continue-to-checkout" class="admin-submit-button" disabled>
-            Продолжить
-        </button>
-
-        <button id="close-payment-modal" class="mt-4 w-full text-center text-red-500 hover:text-red-700 transition-colors duration-200">
-            Отмена
-        </button>
+        <button id="continue-to-checkout" class="admin-submit-button" disabled>Продолжить</button>
+        <button id="close-payment-modal" class="mt-4 w-full text-center text-red-500 hover:text-red-700 transition-colors duration-200">Отмена</button>
     </div>
 </div>
-
-<!-- Модальное окно оформления заказа -->
 <div id="checkout-modal" class="modal-overlay hidden" style="background-color: rgba(0, 0, 0, 0.5);">
     <div class="modal-content">
         <h2 class="text-2xl font-bold mb-4">Оформление заказа</h2>
@@ -183,15 +175,11 @@
             </div>
             <div class="mb-4">
                 <label for="user-phone" class="block text-sm font-medium text-gray-700 mb-1">Номер телефона</label>
-                <input
-                        type="tel"
-                        id="user-phone"
-                        name="phone"
-                        class="admin-input"
-                        placeholder="+998 (99) 999-99-99"
-                        maxlength="19"
-                        required
-                >
+                <input type="tel" id="user-phone" name="phone" class="admin-input" placeholder="+998 (99) 999-99-99" maxlength="19" required>
+            </div>
+            <div class="mb-4">
+                <label for="table-number" class="block text-sm font-medium text-gray-700 mb-1">Номер столика</label>
+                <input type="text" id="table-number" name="table_number" class="admin-input" value="" disabled>
             </div>
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Способ оплаты</label>
@@ -205,94 +193,87 @@
         <button id="close-modal" class="mt-4 text-red-500 hover:text-red-700 transition-colors duration-200">Закрыть</button>
     </div>
 </div>
-
 <script>
-    function isTokenExpired(token) {
-        if (!token) return true;
+    function decodeJwt(token) {
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
-            const now = Math.floor(Date.now() / 1000);
-            return payload.exp < now;
+            return payload.location;
+        } catch (e) {
+            return null;
+        }
+    }
+    function isTokenExpired(token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.exp < Math.floor(Date.now() / 1000);
         } catch (e) {
             return true;
         }
     }
-
-    const tableNumber = localStorage.getItem('tableNumber');
-    if (!tableNumber || isTokenExpired(tableNumber)) {
+    const tableToken = localStorage.getItem('tableNumber');
+    let tableNumber = null;
+    if (tableToken && !isTokenExpired(tableToken)) {
+        tableNumber = decodeJwt(tableToken);
+    }
+    if (!tableNumber) {
         localStorage.removeItem('tableNumber');
         window.location.href = './redirect.html';
     } else {
+        document.getElementById('table-number').value = tableNumber;
+        document.getElementById('table-number-display').textContent = tableNumber;
         let selectedPaymentMethod = null;
-
         function createCartItem(item) {
             const div = document.createElement('div');
             div.className = 'flex flex-col p-4 bg-white border border-gray-200 rounded-xl shadow-sm transition duration-150 hover:shadow-lg';
             div.dataset.id = item.id;
-
             const topSection = document.createElement('div');
             topSection.className = 'flex items-start gap-4';
-
             const img = document.createElement('img');
             img.src = item.image || 'src/images/placeholder.jpg';
             img.alt = item.name;
             img.className = 'cart-item-image';
             topSection.appendChild(img);
-
             const info = document.createElement('div');
             info.className = 'flex-grow min-w-0';
-
             const name = document.createElement('p');
             name.className = 'cart-item-name mb-1';
             name.textContent = item.name;
             info.appendChild(name);
-
             const desc = document.createElement('p');
             desc.className = 'text-[#3b443d]/70 text-sm leading-relaxed line-clamp-2 mb-2';
             desc.textContent = item.description;
             info.appendChild(desc);
-
             const price = document.createElement('p');
             price.className = 'cart-item-price';
             price.textContent = `${item.price} ₽`;
             info.appendChild(price);
-
             topSection.appendChild(info);
             div.appendChild(topSection);
-
             const bottomSection = document.createElement('div');
             bottomSection.className = 'flex items-center justify-between mt-4 pt-4 border-t border-gray-200';
-
             const quantityDiv = document.createElement('div');
             quantityDiv.className = 'flex items-center gap-3 bg-[#597e52]/10 rounded-full px-2 py-1';
-
             const minus = document.createElement('button');
             minus.className = 'cart-quantity-button';
             minus.textContent = '-';
             minus.onclick = () => updateQuantity(item.id, -1);
             quantityDiv.appendChild(minus);
-
             const qtySpan = document.createElement('span');
             qtySpan.className = 'text-lg font-bold text-[#3b443d] min-w-[32px] text-center';
             qtySpan.textContent = item.quantity;
             quantityDiv.appendChild(qtySpan);
-
             const plus = document.createElement('button');
             plus.className = 'cart-quantity-button';
             plus.textContent = '+';
             plus.onclick = () => updateQuantity(item.id, 1);
             quantityDiv.appendChild(plus);
-
             bottomSection.appendChild(quantityDiv);
-
             const rightSection = document.createElement('div');
             rightSection.className = 'flex items-center gap-3';
-
             const totalPrice = document.createElement('p');
             totalPrice.className = 'cart-item-price-total';
             totalPrice.textContent = `${item.price * item.quantity} ₽`;
             rightSection.appendChild(totalPrice);
-
             const removeBtn = document.createElement('button');
             removeBtn.className = 'text-red-500 hover:text-red-700 transition duration-150';
             removeBtn.onclick = () => removeItem(item.id);
@@ -309,13 +290,10 @@
             svg.appendChild(path);
             removeBtn.appendChild(svg);
             rightSection.appendChild(removeBtn);
-
             bottomSection.appendChild(rightSection);
             div.appendChild(bottomSection);
-
             return div;
         }
-
         function loadCart() {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             const list = document.getElementById('cart-items-list');
@@ -323,7 +301,6 @@
             cart.forEach(item => list.appendChild(createCartItem(item)));
             updateTotals();
         }
-
         function updateQuantity(id, delta) {
             let cart = JSON.parse(localStorage.getItem('cart')) || [];
             const itemIndex = cart.findIndex(i => i.id === id);
@@ -334,177 +311,72 @@
                 loadCart();
             }
         }
-
         function removeItem(id) {
             let cart = JSON.parse(localStorage.getItem('cart')) || [];
             cart = cart.filter(i => i.id !== id);
             localStorage.setItem('cart', JSON.stringify(cart));
             loadCart();
         }
-
         function updateTotals() {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-            const delivery = 0;
-            const discount = 0;
-            const total = subtotal + delivery - discount;
-
             document.getElementById('subtotal').textContent = `${subtotal} ₽`;
-            document.getElementById('total').textContent = `${total} ₽`;
+            document.getElementById('total').textContent = `${subtotal} ₽`;
+            document.getElementById('checkout-button').disabled = cart.length === 0;
         }
-
-        // Функция для плавного открытия модального окна
-        function openModal(modal) {
-            modal.classList.remove('hidden');
-            // Даем браузеру время для рендера, чтобы transition сработал
-            setTimeout(() => {
-                modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            }, 10);
+        function openPaymentModal() {
+            document.getElementById('payment-modal').classList.remove('hidden');
         }
-
-        // Функция для плавного закрытия модального окна
-        function closeModal(modal) {
-            modal.style.backgroundColor = 'rgba(0, 0, 0, 0)';
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
+        function closePaymentModal() {
+            document.getElementById('payment-modal').classList.add('hidden');
+            selectedPaymentMethod = null;
+            document.getElementById('continue-to-checkout').disabled = true;
+            document.querySelectorAll('.payment-method-card').forEach(card => card.classList.remove('selected'));
         }
-
-        const checkoutButton = document.getElementById('checkout-button');
-        const paymentModal = document.getElementById('payment-modal');
-        const checkoutModal = document.getElementById('checkout-modal');
-        const closePaymentModal = document.getElementById('close-payment-modal');
-        const closeModalBtn = document.getElementById('close-modal');
-        const continueToCheckout = document.getElementById('continue-to-checkout');
-        const checkoutForm = document.getElementById('checkout-form');
-        const checkoutMessage = document.getElementById('checkout-message');
-
-        // Открыть модальное окно выбора оплаты
-        checkoutButton.addEventListener('click', () => {
-            const cart = JSON.parse(localStorage.getItem('cart')) || [];
-            if (cart.length === 0) {
-                alert('Корзина пуста');
-                return;
-            }
-            openModal(paymentModal);
-        });
-
-        // Закрыть модальное окно выбора оплаты
-        closePaymentModal.addEventListener('click', () => {
-            closeModal(paymentModal);
-            setTimeout(() => {
-                selectedPaymentMethod = null;
-                document.querySelectorAll('.payment-method-card').forEach(card => {
-                    card.classList.remove('selected');
-                });
-                continueToCheckout.disabled = true;
-            }, 300);
-        });
-
-        // Закрыть модальное окно при клике на затемненный фон
-        paymentModal.addEventListener('click', (e) => {
-            if (e.target === paymentModal) {
-                closePaymentModal.click();
-            }
-        });
-
-        checkoutModal.addEventListener('click', (e) => {
-            if (e.target === checkoutModal) {
-                closeModalBtn.click();
-            }
-        });
-
-        // Выбор способа оплаты
+        function openCheckoutModal() {
+            document.getElementById('payment-modal').classList.add('hidden');
+            document.getElementById('checkout-modal').classList.remove('hidden');
+            document.getElementById('selected-payment-display').textContent = selectedPaymentMethod === 'cash' ? 'Наличные/Карта' : selectedPaymentMethod.charAt(0).toUpperCase() + selectedPaymentMethod.slice(1);
+        }
+        function closeCheckoutModal() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+            document.getElementById('checkout-message').textContent = '';
+            document.getElementById('checkout-form').reset();
+            document.getElementById('table-number').value = tableNumber;
+        }
+        function validatePhone(phone) {
+            const regex = /^\+998\s\(\d{2}\)\s\d{3}-\d{2}-\d{2}$/;
+            return regex.test(phone);
+        }
+        document.getElementById('checkout-button').addEventListener('click', openPaymentModal);
+        document.getElementById('close-payment-modal').addEventListener('click', closePaymentModal);
+        document.getElementById('close-modal').addEventListener('click', closeCheckoutModal);
         document.querySelectorAll('.payment-method-card').forEach(card => {
-            card.addEventListener('click', function() {
-                document.querySelectorAll('.payment-method-card').forEach(c => {
-                    c.classList.remove('selected');
-                });
-                this.classList.add('selected');
-                selectedPaymentMethod = this.dataset.payment;
-                continueToCheckout.disabled = false;
+            card.addEventListener('click', () => {
+                selectedPaymentMethod = card.dataset.payment;
+                document.querySelectorAll('.payment-method-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                document.getElementById('continue-to-checkout').disabled = false;
             });
         });
-
-        // Продолжить к оформлению
-        continueToCheckout.addEventListener('click', () => {
-            if (!selectedPaymentMethod) return;
-
-            const paymentNames = {
-                'cash': 'Наличные',
-                'click': 'Click',
-                'payme': 'Payme'
-            };
-
-            document.getElementById('selected-payment-display').textContent = paymentNames[selectedPaymentMethod];
-
-            closeModal(paymentModal);
-            setTimeout(() => {
-                openModal(checkoutModal);
-            }, 300);
-        });
-
-        // Закрыть модальное окно оформления
-        closeModalBtn.addEventListener('click', () => {
-            closeModal(checkoutModal);
-            setTimeout(() => {
-                checkoutMessage.textContent = '';
-                checkoutForm.reset();
-            }, 300);
-        });
-
-        const phoneInput = document.getElementById('user-phone');
-
-        phoneInput.addEventListener('input', function (e) {
-            let value = e.target.value.replace(/\D/g, '');
-
-            if (!value.startsWith('998')) {
-                value = '998' + value.replace(/^998/, '');
-            }
-            if (value.length > 12) value = value.slice(0, 12);
-
-            let formatted = '+998 ';
-            if (value.length > 3) formatted += '(' + value.slice(3, 5);
-            if (value.length >= 5) formatted += ') ' + value.slice(5, 8);
-            if (value.length >= 8) formatted += '-' + value.slice(8, 10);
-            if (value.length >= 10) formatted += '-' + value.slice(10, 12);
-
-            e.target.value = formatted;
-        });
-
-        phoneInput.addEventListener('focus', function (e) {
-            if (!e.target.value) {
-                e.target.value = '+998 (';
-            }
-        });
-
-        phoneInput.addEventListener('blur', function (e) {
-            const val = e.target.value;
-            if (val === '+998 (' || val === '+998' || val.length < 17) {
-                e.target.value = '';
-            }
-        });
-
-        checkoutForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            const formData = new FormData(checkoutForm);
-            const rawPhone = formData.get('phone');
-            const phone = rawPhone.replace(/\D/g, '');
-
-            if (!rawPhone || phone.length < 12) {
-                checkoutMessage.textContent = 'Введите корректный номер телефона';
-                checkoutMessage.classList.add('error-message');
+        document.getElementById('continue-to-checkout').addEventListener('click', openCheckoutModal);
+        document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const phone = formData.get('phone');
+            if (!validatePhone(phone)) {
+                document.getElementById('checkout-message').textContent = 'Неверный формат номера телефона. Используйте формат: +998 (XX) XXX-XX-XX';
+                document.getElementById('checkout-message').classList.add('error-message');
+                document.getElementById('checkout-message').classList.remove('success-message');
                 return;
             }
-
             const data = {
                 user_name: formData.get('user_name'),
                 phone: phone,
+                table_number: tableNumber,
                 payment_method: selectedPaymentMethod,
                 cart: JSON.parse(localStorage.getItem('cart')) || []
             };
-
             try {
                 const response = await fetch('http://127.0.0.1:3000/api/create-order', {
                     method: 'POST',
@@ -512,27 +384,49 @@
                     body: JSON.stringify(data)
                 });
                 const result = await response.json();
-
+                const checkoutMessage = document.getElementById('checkout-message');
                 if (response.ok) {
+                    checkoutMessage.textContent = `Заказ #${result.order_id} успешно создан`;
+                    checkoutMessage.classList.add('success-message');
+                    checkoutMessage.classList.remove('error-message');
                     localStorage.removeItem('cart');
-                    selectedPaymentMethod = null;
-                    loadCart();
-                    closeModal(checkoutModal);
                     setTimeout(() => {
-                        window.location.href = 'index.html?modal=ordered';
-                    }, 300);
+                        window.location.href = './index.html?modal=ordered';
+                    }, 2000);
                 } else {
                     checkoutMessage.textContent = result.error || 'Ошибка создания заказа';
                     checkoutMessage.classList.add('error-message');
+                    checkoutMessage.classList.remove('success-message');
                 }
             } catch (error) {
-                checkoutMessage.textContent = 'Ошибка соединения с сервером';
-                checkoutMessage.classList.add('error-message');
-                console.error('Fetch error:', error);
+                document.getElementById('checkout-message').textContent = 'Ошибка соединения с сервером';
+                document.getElementById('checkout-message').classList.add('error-message');
+                document.getElementById('checkout-message').classList.remove('success-message');
             }
         });
+document.getElementById('user-phone').addEventListener('input', (e) => {
+    let value = e.target.value.replace(/\D/g, ''); // Удаляем все нечисловые символы
+    if (value.length > 12) value = value.slice(0, 12); // Ограничиваем длину до 12 цифр (+998 и 9 цифр номера)
 
-        window.addEventListener('DOMContentLoaded', loadCart);
+    let formatted = '';
+    if (value.length === 0) {
+        e.target.value = ''; // Пустое поле, если ничего не введено
+        return;
+    }
+
+    // Добавляем префикс +998, если он еще не введен
+    formatted = '+998';
+    value = value.startsWith('998') ? value.slice(3) : value;
+
+    // Форматируем оставшуюся часть номера
+    if (value.length > 0) formatted += ` (${value.slice(0, 2)})`;
+    if (value.length > 2) formatted += ` ${value.slice(2, 5)}`;
+    if (value.length > 5) formatted += `-${value.slice(5, 7)}`;
+    if (value.length > 7) formatted += `-${value.slice(7, 9)}`;
+
+    e.target.value = formatted;
+}); 
+        loadCart();
     }
 </script>
 </body>
