@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отзывы</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+        @layer components {
+            .star-rating {
+                @apply flex gap-2 justify-center mb-6;
+            }
+            .star {
+                @apply w-12 h-12 cursor-pointer transition-all duration-200 hover:scale-110;
+            }
+            .star path {
+                @apply transition-all duration-200;
+            }
+            .review-form {
+                @apply bg-white rounded-2xl shadow-lg p-6 md:p-8 max-w-2xl mx-auto;
+            }
+            .form-label {
+                @apply block text-lg font-semibold text-[#3b443d] mb-3;
+            }
+            .form-textarea {
+                @apply w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#597e52] focus:outline-none transition-all duration-200 resize-none text-[#3b443d] bg-[#f4eee1]/30;
+            }
+            .form-input {
+                @apply w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#597e52] focus:outline-none transition-all duration-200 text-[#3b443d] bg-[#f4eee1]/30;
+            }
+            .submit-btn {
+                @apply w-full py-4 bg-[#597e52] text-white font-bold text-lg rounded-xl transition-all duration-200 hover:bg-[#4a6945] active:scale-95 shadow-md hover:shadow-lg;
+            }
+            .back-btn {
+                @apply inline-flex items-center gap-2 px-4 py-2 text-[#597e52] font-semibold hover:text-[#4a6945] transition-all duration-200;
+            }
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-[#f4eee1] text-[#3b443d] font-sans">
+<div class="container mx-auto p-4 sm:p-10 max-w-7xl min-h-screen">
+    <div class="mb-6">
+        <a href="./index.html" class="back-btn">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Назад к меню
+        </a>
+    </div>
+
+    <h1 class="text-4xl md:text-5xl font-bold text-center mb-10 tracking-tight">Оставьте отзыв</h1>
+
+    <div class="review-form">
+        <form id="review-form">
+            <div class="mb-6">
+                <label for="name" class="form-label">Ваше имя</label>
+                <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        class="form-input"
+                        placeholder="Введите ваше имя"
+                        required
+                />
+            </div>
+
+            <div class="mb-6">
+                <label for="phone" class="form-label">Номер телефона</label>
+                <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        class="form-input"
+                        placeholder="+998 (__) ___-__-__"
+                        value="+998 "
+                        required
+                />
+            </div>
+
+            <div class="mb-8">
+                <label class="form-label text-center">Ваша оценка</label>
+                <div class="star-rating" id="star-rating">
+                    <svg class="star" data-rating="1" viewBox="0 0 256 256" fill="none">
+                        <path fill="none" stroke="#F9B618" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M123.574 52.994c2.434-4.932 6.417-4.932 8.852 0l18.164 36.807c2.434 4.932 8.879 9.613 14.322 10.404l40.617 5.902c5.443.791 6.674 4.578 2.735 8.418l-29.391 28.648c-3.938 3.84-6.4 11.416-5.47 16.836l6.938 40.453c.93 5.422-2.292 7.764-7.161 5.203l-36.329-19.1c-4.868-2.559-12.834-2.559-17.703 0l-36.329 19.1c-4.868 2.561-8.09.219-7.161-5.203l6.938-40.453c.93-5.42-1.532-12.996-5.47-16.836l-29.391-28.648c-3.938-3.84-2.708-7.627 2.735-8.418l40.617-5.902c5.443-.791 11.888-5.473 14.322-10.404l18.165-36.807z"/>
+                    </svg>
+                    <svg class="star" data-rating="2" viewBox="0 0 256 256" fill="none">
+                        <path fill="none" stroke="#F9B618" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M123.574 52.994c2.434-4.932 6.417-4.932 8.852 0l18.164 36.807c2.434 4.932 8.879 9.613 14.322 10.404l40.617 5.902c5.443.791 6.674 4.578 2.735 8.418l-29.391 28.648c-3.938 3.84-6.4 11.416-5.47 16.836l6.938 40.453c.93 5.422-2.292 7.764-7.161 5.203l-36.329-19.1c-4.868-2.559-12.834-2.559-17.703 0l-36.329 19.1c-4.868 2.561-8.09.219-7.161-5.203l6.938-40.453c.93-5.42-1.532-12.996-5.47-16.836l-29.391-28.648c-3.938-3.84-2.708-7.627 2.735-8.418l40.617-5.902c5.443-.791 11.888-5.473 14.322-10.404l18.165-36.807z"/>
+                    </svg>
+                    <svg class="star" data-rating="3" viewBox="0 0 256 256" fill="none">
+                        <path fill="none" stroke="#F9B618" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M123.574 52.994c2.434-4.932 6.417-4.932 8.852 0l18.164 36.807c2.434 4.932 8.879 9.613 14.322 10.404l40.617 5.902c5.443.791 6.674 4.578 2.735 8.418l-29.391 28.648c-3.938 3.84-6.4 11.416-5.47 16.836l6.938 40.453c.93 5.422-2.292 7.764-7.161 5.203l-36.329-19.1c-4.868-2.559-12.834-2.559-17.703 0l-36.329 19.1c-4.868 2.561-8.09.219-7.161-5.203l6.938-40.453c.93-5.42-1.532-12.996-5.47-16.836l-29.391-28.648c-3.938-3.84-2.708-7.627 2.735-8.418l40.617-5.902c5.443-.791 11.888-5.473 14.322-10.404l18.165-36.807z"/>
+                    </svg>
+                    <svg class="star" data-rating="4" viewBox="0 0 256 256" fill="none">
+                        <path fill="none" stroke="#F9B618" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M123.574 52.994c2.434-4.932 6.417-4.932 8.852 0l18.164 36.807c2.434 4.932 8.879 9.613 14.322 10.404l40.617 5.902c5.443.791 6.674 4.578 2.735 8.418l-29.391 28.648c-3.938 3.84-6.4 11.416-5.47 16.836l6.938 40.453c.93 5.422-2.292 7.764-7.161 5.203l-36.329-19.1c-4.868-2.559-12.834-2.559-17.703 0l-36.329 19.1c-4.868 2.561-8.09.219-7.161-5.203l6.938-40.453c.93-5.42-1.532-12.996-5.47-16.836l-29.391-28.648c-3.938-3.84-2.708-7.627 2.735-8.418l40.617-5.902c5.443-.791 11.888-5.473 14.322-10.404l18.165-36.807z"/>
+                    </svg>
+                    <svg class="star" data-rating="5" viewBox="0 0 256 256" fill="none">
+                        <path fill="none" stroke="#F9B618" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M123.574 52.994c2.434-4.932 6.417-4.932 8.852 0l18.164 36.807c2.434 4.932 8.879 9.613 14.322 10.404l40.617 5.902c5.443.791 6.674 4.578 2.735 8.418l-29.391 28.648c-3.938 3.84-6.4 11.416-5.47 16.836l6.938 40.453c.93 5.422-2.292 7.764-7.161 5.203l-36.329-19.1c-4.868-2.559-12.834-2.559-17.703 0l-36.329 19.1c-4.868 2.561-8.09.219-7.161-5.203l6.938-40.453c.93-5.42-1.532-12.996-5.47-16.836l-29.391-28.648c-3.938-3.84-2.708-7.627 2.735-8.418l40.617-5.902c5.443-.791 11.888-5.473 14.322-10.404l18.165-36.807z"/>
+                    </svg>
+                </div>
+                <p class="text-center text-sm text-[#3b443d]/60 mt-2" id="rating-text">Выберите оценку</p>
+            </div>
+
+            <div class="mb-6">
+                <label for="review-text" class="form-label">Ваш отзыв</label>
+                <textarea
+                        id="review-text"
+                        name="review-text"
+                        rows="6"
+                        class="form-textarea"
+                        placeholder="Расскажите о вашем опыте..."
+                        required
+                ></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn">
+                Отправить отзыв
+            </button>
+        </form>
+    </div>
+</div>
+
+<div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center mx-4">
+        <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <h2 class="text-2xl font-bold mb-2">Спасибо за отзыв!</h2>
+        <p class="text-[#3b443d]/70 mb-6">Ваше мнение очень важно для нас</p>
+        <button id="close-modal" class="px-6 py-3 bg-[#597e52] text-white font-semibold rounded-lg hover:scale-105 transition">
+            Окей
+        </button>
+    </div>
+</div>
+
+<script>
+    let selectedRating = 0;
+    const stars = document.querySelectorAll('.star');
+    const ratingText = document.getElementById('rating-text');
+    const form = document.getElementById('review-form');
+    const modal = document.getElementById('success-modal');
+    const closeModalBtn = document.getElementById('close-modal');
+
+    const ratingTexts = {
+        1: 'Ужасно',
+        2: 'Плохо',
+        3: 'Нормально',
+        4: 'Хорошо',
+        5: 'Отлично'
+    };
+
+    const phoneInput = document.getElementById('phone');
+
+    phoneInput.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/\D/g, '');
+
+        if (!value.startsWith('998')) {
+            value = '998' + value.substring(3);
+        }
+
+        if (value.length > 12) {
+            value = value.substring(0, 12);
+        }
+
+        let formatted = '+998 ';
+        if (value.length > 3) {
+            formatted += '(' + value.substring(3, 5);
+        }
+        if (value.length > 5) {
+            formatted += ') ' + value.substring(5, 8);
+        }
+        if (value.length > 8) {
+            formatted += '-' + value.substring(8, 10);
+        }
+        if (value.length > 10) {
+            formatted += '-' + value.substring(10, 12);
+        }
+
+        e.target.value = formatted;
+    });
+
+    phoneInput.addEventListener('keydown', (e) => {
+        const value = e.target.value;
+        if (e.key === 'Backspace' && value.length <= 5) {
+            e.preventDefault();
+        }
+    });
+
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            const rating = parseInt(star.getAttribute('data-rating'));
+            selectedRating = rating;
+            updateStars(rating);
+            ratingText.textContent = ratingTexts[rating];
+        });
+
+        star.addEventListener('mouseenter', () => {
+            const rating = parseInt(star.getAttribute('data-rating'));
+            updateStars(rating, true);
+        });
+
+        star.addEventListener('mouseleave', () => {
+            updateStars(selectedRating);
+        });
+    });
+
+    function updateStars(rating, isHover = false) {
+        stars.forEach(star => {
+            const starRating = parseInt(star.getAttribute('data-rating'));
+            const path = star.querySelector('path');
+
+            if (starRating <= rating) {
+                path.setAttribute('fill', isHover && starRating > selectedRating ? '#F9B618aa' : '#F9B618');
+            } else {
+                path.setAttribute('fill', 'none');
+            }
+        });
+    }
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        if (selectedRating === 0) {
+            alert('Пожалуйста, выберите оценку');
+            return;
+        }
+
+        const reviewText = document.getElementById('review-text').value;
+        const name = document.getElementById('name').value;
+        const phone = document.getElementById('phone').value;
+
+        console.log('Отзыв отправлен:', {
+            name: name,
+            phone: phone,
+            rating: selectedRating,
+            text: reviewText
+        });
+
+        modal.classList.remove('hidden');
+        form.reset();
+        selectedRating = 0;
+        updateStars(0);
+        ratingText.textContent = 'Выберите оценку';
+    });
+
+    closeModalBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
+</script>
+</body>
+</html>
