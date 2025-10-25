@@ -13,7 +13,6 @@ SECRET_KEY = 'your-secret-key'
 
 logging.basicConfig(level=logging.DEBUG)
 
-# Фиксированный пользователь
 users = [
     {
         'username': '1',
@@ -50,7 +49,6 @@ def verify_token(token):
 
 def init_db():
     with get_db_connection() as conn:
-        # Таблица категорий
         conn.execute('''
             CREATE TABLE IF NOT EXISTS categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,8 +56,6 @@ def init_db():
                 name TEXT NOT NULL
             )
         ''')
-
-        # Таблица блюд
         conn.execute('''
             CREATE TABLE IF NOT EXISTS items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,8 +66,6 @@ def init_db():
                 image TEXT NOT NULL
             )
         ''')
-
-        # Таблица заказов
         conn.execute('''
             CREATE TABLE IF NOT EXISTS orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,8 +78,6 @@ def init_db():
             )
         ''')
         conn.commit()
-
-        # Заполнение категорий, если пусто
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) FROM categories')
         if cursor.fetchone()[0] == 0:
@@ -97,8 +89,6 @@ def init_db():
             ]
             conn.executemany('INSERT INTO categories (value, name) VALUES (?, ?)', categories)
             conn.commit()
-
-        # Заполнение меню, если пусто
         cursor.execute('SELECT COUNT(*) FROM items')
         if cursor.fetchone()[0] == 0:
             items = [
@@ -117,14 +107,10 @@ def migrate_db():
     if not os.path.exists(DB_NAME):
         init_db()
         return
-
     with get_db_connection() as conn:
         cursor = conn.cursor()
-
-        # === Миграция таблицы orders: добавляем столбец created_at ===
         cursor.execute("PRAGMA table_info(orders)")
         columns = [row[1] for row in cursor.fetchall()]
-
         if 'created_at' not in columns:
             app.logger.info("Migrating orders table: adding created_at column...")
             conn.execute('''
@@ -138,18 +124,14 @@ def migrate_db():
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
-
             conn.execute('''
                 INSERT INTO orders_new (id, user_name, phone, items, total, status)
                 SELECT id, user_name, phone, items, total, status FROM orders
             ''')
-
             conn.execute('DROP TABLE orders')
             conn.execute('ALTER TABLE orders_new RENAME TO orders')
             conn.commit()
             app.logger.info("Migration completed: created_at column added.")
-
-        # === Проверка и миграция для categories ===
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='categories'")
         if not cursor.fetchone():
             app.logger.info("Creating categories table...")
@@ -168,6 +150,7 @@ def migrate_db():
             ]
             conn.executemany('INSERT INTO categories (value, name) VALUES (?, ?)', categories)
             conn.commit()
+
 @app.route('/')
 def home():
     return send_from_directory('static', 'login.html')
@@ -176,17 +159,13 @@ def home():
 def login():
     username = request.form.get('username')
     password = request.form.get('password')
-    
     if not username or not password:
         return jsonify({'error': 'Заполните все поля'}), 400
-
     user = next((u for u in users if u['username'] == username), None)
     if not user:
         return jsonify({'error': 'Пользователь не найден'}), 401
-    
     if not bcrypt.checkpw(password.encode('utf-8'), user['password']):
         return jsonify({'error': 'Неверный пароль'}), 401
-
     token = jwt.encode({'username': username}, SECRET_KEY, algorithm='HS256')
     return jsonify({'token': token})
 
@@ -196,7 +175,6 @@ def get_categories():
     username, error, status = verify_token(token)
     if error:
         return jsonify(error), status
-
     conn = get_db_connection()
     categories = conn.execute('SELECT value, name FROM categories').fetchall()
     conn.close()
@@ -208,14 +186,11 @@ def add_category():
     username, error, status = verify_token(token)
     if error:
         return jsonify(error), status
-
     data = request.form
     value = data.get('value')
     name = data.get('name')
-
     if not all([value, name]):
         return jsonify({'error': 'Заполните все обязательные поля'}), 400
-
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -234,21 +209,16 @@ def remove_category():
     username, error, status = verify_token(token)
     if error:
         return jsonify(error), status
-
     category_value = request.form.get('category-id')
     if not category_value:
         return jsonify({'error': 'Выберите категорию для удаления'}), 400
-
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT value FROM categories WHERE value = ?', (category_value,))
     if not cursor.fetchone():
         conn.close()
         return jsonify({'error': 'Категория не найдена'}), 404
-
-    # Удаляем блюда из категории
     cursor.execute('DELETE FROM items WHERE category = ?', (category_value,))
-    # Удаляем категорию
     cursor.execute('DELETE FROM categories WHERE value = ?', (category_value,))
     conn.commit()
     conn.close()
@@ -260,12 +230,10 @@ def get_menu():
     categories = conn.execute('SELECT value, name FROM categories').fetchall()
     items = conn.execute('SELECT * FROM items').fetchall()
     conn.close()
-
     menu = {}
     for cat in categories:
         cat_value = cat['value']
         menu[cat_value] = {'name': cat['name'], 'items': []}
-
     for item in items:
         cat = item['category']
         if cat in menu:
@@ -276,40 +244,34 @@ def get_menu():
                 'price': item['price'],
                 'image': item['image']
             })
-
     return jsonify({'categories': menu})
+
 @app.route('/api/add-dish', methods=['POST'])
 def add_dish():
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
     username, error, status = verify_token(token)
     if error:
         return jsonify(error), status
-
     data = request.form
     name = data.get('name')
     category = data.get('category')
     description = data.get('description')
     price = data.get('price')
     image = data.get('image') or 'src/images/default.jpg'
-
     if not all([name, category, description, price]):
         return jsonify({'error': 'Заполните все обязательные поля'}), 400
-
     try:
         price = int(price)
         if price < 0:
             raise ValueError
     except ValueError:
         return jsonify({'error': 'Цена должна быть положительным числом'}), 400
-
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Проверяем существование категории
     cursor.execute('SELECT value FROM categories WHERE value = ?', (category,))
     if not cursor.fetchone():
         conn.close()
         return jsonify({'error': 'Категория не найдена'}), 404
-
     cursor.execute('INSERT INTO items (category, name, description, price, image) VALUES (?, ?, ?, ?, ?)',
                    (category, name, description, price, image))
     conn.commit()
@@ -322,23 +284,19 @@ def remove_dish():
     username, error, status = verify_token(token)
     if error:
         return jsonify(error), status
-
     dish_id = request.form.get('dish-id')
     if not dish_id:
         return jsonify({'error': 'Выберите блюдо для удаления'}), 400
-
     try:
         dish_id = int(dish_id)
     except ValueError:
         return jsonify({'error': 'Неверный ID блюда'}), 400
-
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT id FROM items WHERE id = ?', (dish_id,))
     if not cursor.fetchone():
         conn.close()
         return jsonify({'error': 'Блюдо не найдено'}), 404
-
     cursor.execute('DELETE FROM items WHERE id = ?', (dish_id,))
     conn.commit()
     conn.close()
@@ -350,19 +308,10 @@ def generate_table_link():
     username, error, status = verify_token(token)
     if error:
         return jsonify(error), status
-
-    table_number = request.form.get('table_number')
-    if not table_number:
-        return jsonify({'error': 'Укажите номер столика'}), 400
-
-    try:
-        table_number = int(table_number)
-        if table_number <= 0:
-            raise ValueError
-    except ValueError:
-        return jsonify({'error': 'Номер столика должен быть положительным числом'}), 400
-
-    table_token = jwt.encode({'table_number': table_number}, SECRET_KEY, algorithm='HS256')
+    location = request.form.get('location')
+    if not location:
+        return jsonify({'error': 'Укажите локацию'}), 400
+    table_token = jwt.encode({'location': location}, SECRET_KEY, algorithm='HS256')
     link = f'file:///C:/Users/slava/Desktop/Defency/Some-site/redirect.html?lots={table_token}'
     return jsonify({'link': link})
 
@@ -370,13 +319,12 @@ def generate_table_link():
 def verify_table():
     table_token = request.json.get('lots')
     if not table_token:
-        return jsonify({'error': 'Номер столика отсутствует'}), 400
-
+        return jsonify({'error': 'Локация отсутствует'}), 400
     try:
         jwt.decode(table_token, SECRET_KEY, algorithms=['HS256'])
         return jsonify({'message': 'Токен валиден'})
     except jwt.InvalidTokenError:
-        return jsonify({'error': 'Неверный номер столика'}), 400
+        return jsonify({'error': 'Неверная локация'}), 400
 
 @app.route('/api/create-order', methods=['POST'])
 def create_order():
@@ -384,18 +332,14 @@ def create_order():
     user_name = data.get('user_name')
     phone = data.get('phone')
     cart = data.get('cart')
-
     if not all([user_name, phone, cart]):
         return jsonify({'error': 'Заполните все поля'}), 400
-
     try:
         total = sum(item['price'] * item['quantity'] for item in cart)
     except Exception as e:
         app.logger.error(f"Invalid cart format: {e}")
         return jsonify({'error': 'Неверный формат корзины'}), 400
-
     items_json = json.dumps(cart)
-
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
@@ -405,7 +349,6 @@ def create_order():
     conn.commit()
     order_id = cursor.lastrowid
     conn.close()
-
     return jsonify({'message': 'Заказ успешно создан', 'order_id': order_id})
 
 @app.route('/api/orders', methods=['GET'])
@@ -414,11 +357,9 @@ def get_orders():
     username, error, status = verify_token(token)
     if error:
         return jsonify(error), status
-
     conn = get_db_connection()
     orders = conn.execute('SELECT * FROM orders ORDER BY created_at DESC').fetchall()
     conn.close()
-
     orders_list = []
     for order in orders:
         orders_list.append({
@@ -430,7 +371,6 @@ def get_orders():
             'status': order['status'],
             'timestamp': order['created_at']
         })
-
     return jsonify({'orders': orders_list})
 
 @app.route('/api/take-order/<int:order_id>', methods=['POST'])
@@ -439,7 +379,6 @@ def take_order(order_id):
     username, error, status = verify_token(token)
     if error:
         return jsonify(error), status
-
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT status FROM orders WHERE id = ?', (order_id,))
@@ -447,15 +386,12 @@ def take_order(order_id):
     if not result:
         conn.close()
         return jsonify({'error': 'Заказ не найден'}), 404
-
     if result['status'] != 'new':
         conn.close()
         return jsonify({'error': 'Заказ уже взят или закрыт'}), 400
-
     cursor.execute('UPDATE orders SET status = "in_progress" WHERE id = ?', (order_id,))
     conn.commit()
     conn.close()
-
     return jsonify({'message': 'Заказ взят в работу'})
 
 @app.route('/api/close-order/<int:order_id>', methods=['POST'])
@@ -464,7 +400,6 @@ def close_order(order_id):
     username, error, status = verify_token(token)
     if error:
         return jsonify(error), status
-
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT status FROM orders WHERE id = ?', (order_id,))
@@ -472,15 +407,12 @@ def close_order(order_id):
     if not result:
         conn.close()
         return jsonify({'error': 'Заказ не найден'}), 404
-
     if result['status'] == 'closed':
         conn.close()
         return jsonify({'error': 'Заказ уже закрыт'}), 400
-
     cursor.execute('UPDATE orders SET status = "closed" WHERE id = ?', (order_id,))
     conn.commit()
     conn.close()
-
     return jsonify({'message': 'Заказ закрыт'})
 
 @app.route('/logout')
