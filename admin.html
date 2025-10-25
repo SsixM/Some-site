@@ -203,9 +203,9 @@
                         const ordersContainer = document.getElementById('orders-list');
                         ordersContainer.innerHTML = '';
                         data.orders.forEach(order => {
-                        const orderDiv = document.createElement('div');
-                        orderDiv.className = 'p-4 border rounded-md bg-gray-50 shadow-sm mb-4';
-                        orderDiv.innerHTML = `
+                            const orderDiv = document.createElement('div');
+                            orderDiv.className = 'p-4 border rounded-md bg-gray-50 shadow-sm mb-4';
+                            orderDiv.innerHTML = `
                             <p class="font-bold text-lg mb-1">Заказ #${order.id}</p>
                             <p>Имя: ${order.user_name}</p>
                             <p>Номер телефона: ${order.phone}</p>
@@ -220,35 +220,35 @@
                             </div>
                         `;
 
-                        const actionsDiv = document.createElement('div');
-                        actionsDiv.className = 'mt-4 space-x-2';
+                            const actionsDiv = document.createElement('div');
+                            actionsDiv.className = 'mt-4 space-x-2';
 
-                        if (order.status === 'new') {
-                            const takeButton = document.createElement('button');
-                            takeButton.className = 'bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700';
-                            takeButton.textContent = 'Взять заказ';
-                            takeButton.onclick = () => takeOrder(order.id);
-                            actionsDiv.appendChild(takeButton);
-                        }
+                            if (order.status === 'new') {
+                                const takeButton = document.createElement('button');
+                                takeButton.className = 'bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700';
+                                takeButton.textContent = 'Взять заказ';
+                                takeButton.onclick = () => takeOrder(order.id);
+                                actionsDiv.appendChild(takeButton);
+                            }
 
-                        if (order.status !== 'closed') {
-                            const closeButton = document.createElement('button');
-                            closeButton.className = 'bg-red-500 text-white p-2 rounded-md hover:bg-red-700';
-                            closeButton.textContent = 'Закрыть заказ';
-                            closeButton.onclick = () => closeOrder(order.id);
-                            actionsDiv.appendChild(closeButton);
-                        }
+                            if (order.status !== 'closed') {
+                                const closeButton = document.createElement('button');
+                                closeButton.className = 'bg-red-500 text-white p-2 rounded-md hover:bg-red-700';
+                                closeButton.textContent = 'Закрыть заказ';
+                                closeButton.onclick = () => closeOrder(order.id);
+                                actionsDiv.appendChild(closeButton);
+                            }
 
-                        orderDiv.appendChild(actionsDiv);
-                        ordersContainer.appendChild(orderDiv);
+                            orderDiv.appendChild(actionsDiv);
+                            ordersContainer.appendChild(orderDiv);
 
-                        const toggleButton = orderDiv.querySelector('.order-details-toggle-button');
-                        toggleButton.addEventListener('click', () => {
-                            const detailsDiv = document.getElementById(`details-${order.id}`);
-                            detailsDiv.classList.toggle('hidden');
-                            toggleButton.textContent = detailsDiv.classList.contains('hidden') ? 'Показать детали' : 'Скрыть детали';
+                            const toggleButton = orderDiv.querySelector('.order-details-toggle-button');
+                            toggleButton.addEventListener('click', () => {
+                                const detailsDiv = document.getElementById(`details-${order.id}`);
+                                detailsDiv.classList.toggle('hidden');
+                                toggleButton.textContent = detailsDiv.classList.contains('hidden') ? 'Показать детали' : 'Скрыть детали';
+                            });
                         });
-                    });
                     } catch (error) {
                         console.error('Error loading orders:', error);
                     }
@@ -616,8 +616,43 @@
                 <h3 class="text-2xl font-semibold text-gray-800 mb-4">Генерация Ссылки для Столика</h3>
                 <form id="table-link-form" class="space-y-4">
                     <div>
-                        <label for="table-number" class="block text-sm font-medium text-gray-700 mb-1">Номер Столика</label>
-                        <input type="number" id="table-number" name="table_number" class="admin-input" placeholder="1" min="1" required>
+                        <label for="table-selection" class="block text-sm font-medium text-gray-700 mb-1">Выберите столик или зону</label>
+                        <select id="table-selection" name="table_number" class="admin-input" required>
+                            <option value="" disabled selected>Выберите из списка...</option>
+                            <optgroup label="Ресторан (Столики)">
+                                <option value="Столик 1">Столик 1</option>
+                                <option value="Столик 2">Столик 2</option>
+                                <option value="Столик 3">Столик 3</option>
+                                <option value="Столик 4">Столик 4</option>
+                                <option value="Столик 5">Столик 5</option>
+                                <option value="Столик 6">Столик 6</option>
+                                <option value="Столик 7">Столик 7</option>
+                                <option value="Столик 8">Столик 8</option>
+                            </optgroup>
+                            <optgroup label="Зона 'Азия' (Топчаны)">
+                                <option value="Азия 1">Азия 1</option>
+                                <option value="Азия 2">Азия 2</option>
+                                <option value="Азия 3">Азия 3</option>
+                                <option value="Азия 4">Азия 4</option>
+                                <option value="Азия 5">Азия 5</option>
+                                <option value="Азия 6">Азия 6</option>
+                            </optgroup>
+                            <optgroup label="Зона 'Восток' (Топчаны)">
+                                <option value="Восток 1">Восток 1</option>
+                                <option value="Восток 2">Восток 2</option>
+                                <option value="Восток 3">Восток 3</option>
+                                <option value="Восток 4">Восток 4</option>
+                                <option value="Восток 5">Восток 5</option>
+                                <option value="Восток 6">Восток 6</option>
+                                <option value="Восток 7">Восток 7</option>
+                                <option value="Восток 8">Восток 8</option>
+                            </optgroup>
+                            <optgroup label="Отдельные домики">
+                                <option value="Беседка 1">Беседка 1</option>
+                                <option value="Беседка 2">Беседка 2</option>
+                                <option value="Типи">Типи</option>
+                            </optgroup>
+                        </select>
                     </div>
                     <div>
                         <label for="table-link-output" class="block text-sm font-medium text-gray-700 mb-1">Сгенерированная Ссылка</label>
