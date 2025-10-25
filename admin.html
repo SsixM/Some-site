@@ -73,6 +73,9 @@
             const locationLinkForm = document.getElementById('location-link-form');
             const locationLinkMessage = document.getElementById('location-link-message');
             const locationLinkOutput = document.getElementById('location-link-output');
+            const reviewLinkForm = document.getElementById('review-link-form');
+            const reviewLinkMessage = document.getElementById('review-link-message');
+            const reviewLinkOutput = document.getElementById('review-link-output');
             const token = localStorage.getItem('token');
             async function checkAuth() {
                 try {
@@ -303,19 +306,19 @@
                         console.error('Error closing order:', error);
                     }
                 }
-                function GenerateQR(myUrl) {
-                    const img = document.getElementsByClassName('qr-code')[0];
+                function GenerateQR(myUrl, imgClass = 'qr-code') {
+                    const img = document.querySelector(`.${imgClass}`);
                     QRCode.toDataURL(myUrl, function (error, dataUrl) {
                         if (error) {
                             console.error(error);
                         } else {
                             img.src = dataUrl;
-                            document.getElementsByClassName('qr-code-parent')[0].classList.remove('hidden');
+                            img.closest('.qr-code-parent').classList.remove('hidden');
                         }
                     });
                 }
-                function DownloadQR() {
-                    const img = document.getElementsByClassName('qr-code')[0].src;
+                function DownloadQR(imgClass = 'qr-code') {
+                    const img = document.querySelector(`.${imgClass}`).src;
                     const link = document.createElement('a');
                     link.href = img;
                     link.download = 'qr-code.png';
@@ -323,7 +326,8 @@
                     link.click();
                     document.body.removeChild(link);
                 }
-                document.getElementById('download-qr').addEventListener('click', DownloadQR)
+                document.getElementById('download-qr').addEventListener('click', () => DownloadQR('qr-code'))
+                document.getElementById('download-qr-review').addEventListener('click', () => DownloadQR('qr-code-review'))
                 locationLinkForm.addEventListener('submit', async function(event) {
                     event.preventDefault();
                     locationLinkMessage.textContent = '';
@@ -338,7 +342,7 @@
                         const data = await response.json();
                         if (response.ok) {
                             locationLinkOutput.value = data.link;
-                            GenerateQR(data.link);
+                            GenerateQR(data.link, 'qr-code');
                             locationLinkMessage.textContent = 'Ссылка успешно сгенерирована';
                             locationLinkMessage.classList.add('success-message');
                             localStorage.setItem('location', formData.get('location'));
@@ -351,6 +355,19 @@
                         locationLinkMessage.classList.add('error-message');
                         console.error('Fetch error:', error);
                     }
+                });
+                reviewLinkForm.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    reviewLinkMessage.textContent = '';
+                    reviewLinkOutput.value = '';
+                    const formData = new FormData(reviewLinkForm);
+                    const location = formData.get('location');
+                    const baseUrl = window.location.origin;
+                    const reviewLink = `${baseUrl}/reviews.html?table=${encodeURIComponent(location)}`;
+                    reviewLinkOutput.value = reviewLink;
+                    GenerateQR(reviewLink, 'qr-code-review');
+                    reviewLinkMessage.textContent = 'Ссылка успешно сгенерирована';
+                    reviewLinkMessage.classList.add('success-message');
                 });
                 addDishForm.addEventListener('submit', async function(event) {
                     event.preventDefault();
@@ -604,59 +621,123 @@
         </section>
         <section id="create-links-content" data-tab-content class="space-y-6 hidden">
             <h2 class="admin-content-title">Генерация Ссылок</h2>
-            <div class="admin-card space-y-4">
-                <h3 class="text-2xl font-semibold text-gray-800 mb-4">Генерация Ссылки для Локации</h3>
-                <form id="location-link-form" class="space-y-4">
-                    <div>
-                        <label for="location-selection" class="block text-sm font-medium text-gray-700 mb-1">Выберите локацию</label>
-                        <select id="location-selection" name="location" class="admin-input" required>
-                            <option value="" disabled selected>Выберите из списка...</option>
-                            <optgroup label="Ресторан (Столики)">
-                                <option value="Столик 1">Столик 1</option>
-                                <option value="Столик 2">Столик 2</option>
-                                <option value="Столик 3">Столик 3</option>
-                                <option value="Столик 4">Столик 4</option>
-                                <option value="Столик 5">Столик 5</option>
-                                <option value="Столик 6">Столик 6</option>
-                                <option value="Столик 7">Столик 7</option>
-                                <option value="Столик 8">Столик 8</option>
-                            </optgroup>
-                            <optgroup label="Зона 'Азия' (Топчаны)">
-                                <option value="Азия 1">Азия 1</option>
-                                <option value="Азия 2">Азия 2</option>
-                                <option value="Азия 3">Азия 3</option>
-                                <option value="Азия 4">Азия 4</option>
-                                <option value="Азия 5">Азия 5</option>
-                                <option value="Азия 6">Азия 6</option>
-                            </optgroup>
-                            <optgroup label="Зона 'Восток' (Топчаны)">
-                                <option value="Восток 1">Восток 1</option>
-                                <option value="Восток 2">Восток 2</option>
-                                <option value="Восток 3">Восток 3</option>
-                                <option value="Восток 4">Восток 4</option>
-                                <option value="Восток 5">Восток 5</option>
-                                <option value="Восток 6">Восток 6</option>
-                                <option value="Восток 7">Восток 7</option>
-                                <option value="Восток 8">Восток 8</option>
-                            </optgroup>
-                            <optgroup label="Отдельные домики">
-                                <option value="Беседка 1">Беседка 1</option>
-                                <option value="Беседка 2">Беседка 2</option>
-                                <option value="Типи">Типи</option>
-                            </optgroup>
-                        </select>
+            <div class="admin-sub-tabs flex space-x-6 border-b pb-2 mb-4">
+                <button data-sub-tab="menu-link" class="admin-sub-tab-button active">Ссылка на меню</button>
+                <button data-sub-tab="review-link" class="admin-sub-tab-button">Ссылка на отзывы</button>
+            </div>
+            <div class="sub-content-container">
+                <div id="menu-link-sub-content" data-sub-tab-content class="space-y-6">
+                    <div class="admin-card space-y-4">
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Генерация Ссылки для Локации</h3>
+                        <form id="location-link-form" class="space-y-4">
+                            <div>
+                                <label for="location-selection" class="block text-sm font-medium text-gray-700 mb-1">Выберите локацию</label>
+                                <select id="location-selection" name="location" class="admin-input" required>
+                                    <option value="" disabled selected>Выберите из списка...</option>
+                                    <optgroup label="Ресторан (Столики)">
+                                        <option value="Столик 1">Столик 1</option>
+                                        <option value="Столик 2">Столик 2</option>
+                                        <option value="Столик 3">Столик 3</option>
+                                        <option value="Столик 4">Столик 4</option>
+                                        <option value="Столик 5">Столик 5</option>
+                                        <option value="Столик 6">Столик 6</option>
+                                        <option value="Столик 7">Столик 7</option>
+                                        <option value="Столик 8">Столик 8</option>
+                                    </optgroup>
+                                    <optgroup label="Зона 'Азия' (Топчаны)">
+                                        <option value="Азия 1">Азия 1</option>
+                                        <option value="Азия 2">Азия 2</option>
+                                        <option value="Азия 3">Азия 3</option>
+                                        <option value="Азия 4">Азия 4</option>
+                                        <option value="Азия 5">Азия 5</option>
+                                        <option value="Азия 6">Азия 6</option>
+                                    </optgroup>
+                                    <optgroup label="Зона 'Восток' (Топчаны)">
+                                        <option value="Восток 1">Восток 1</option>
+                                        <option value="Восток 2">Восток 2</option>
+                                        <option value="Восток 3">Восток 3</option>
+                                        <option value="Восток 4">Восток 4</option>
+                                        <option value="Восток 5">Восток 5</option>
+                                        <option value="Восток 6">Восток 6</option>
+                                        <option value="Восток 7">Восток 7</option>
+                                        <option value="Восток 8">Восток 8</option>
+                                    </optgroup>
+                                    <optgroup label="Отдельные домики">
+                                        <option value="Беседка 1">Беседка 1</option>
+                                        <option value="Беседка 2">Беседка 2</option>
+                                        <option value="Типи">Типи</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="location-link-output" class="block text-sm font-medium text-gray-700 mb-1">Сгенерированная Ссылка</label>
+                                <input type="text" id="location-link-output" class="admin-input bg-gray-100" readonly>
+                            </div>
+                            <div class="qr-code-parent flex hidden">
+                                <img class="qr-code h-40" src="" alt="qr-code">
+                                <button type="button" id="download-qr" class="max-w-40 m-4 mt-16 p-2 rounded-md w-full h-10 border bg-[#597e52] text-white">Скачать</button>
+                            </div>
+                            <button type="submit" class="admin-submit-button w-full">Сгенерировать Ссылку</button>
+                            <div id="location-link-message" class="message"></div>
+                        </form>
                     </div>
-                    <div>
-                        <label for="location-link-output" class="block text-sm font-medium text-gray-700 mb-1">Сгенерированная Ссылка</label>
-                        <input type="text" id="location-link-output" class="admin-input bg-gray-100" readonly>
+                </div>
+                <div id="review-link-sub-content" data-sub-tab-content class="space-y-6 hidden">
+                    <div class="admin-card space-y-4">
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Генерация Ссылки на Отзывы</h3>
+                        <form id="review-link-form" class="space-y-4">
+                            <div>
+                                <label for="review-location-selection" class="block text-sm font-medium text-gray-700 mb-1">Выберите локацию</label>
+                                <select id="review-location-selection" name="location" class="admin-input" required>
+                                    <option value="" disabled selected>Выберите из списка...</option>
+                                    <optgroup label="Ресторан (Столики)">
+                                        <option value="Столик 1">Столик 1</option>
+                                        <option value="Столик 2">Столик 2</option>
+                                        <option value="Столик 3">Столик 3</option>
+                                        <option value="Столик 4">Столик 4</option>
+                                        <option value="Столик 5">Столик 5</option>
+                                        <option value="Столик 6">Столик 6</option>
+                                        <option value="Столик 7">Столик 7</option>
+                                        <option value="Столик 8">Столик 8</option>
+                                    </optgroup>
+                                    <optgroup label="Зона 'Азия' (Топчаны)">
+                                        <option value="Азия 1">Азия 1</option>
+                                        <option value="Азия 2">Азия 2</option>
+                                        <option value="Азия 3">Азия 3</option>
+                                        <option value="Азия 4">Азия 4</option>
+                                        <option value="Азия 5">Азия 5</option>
+                                        <option value="Азия 6">Азия 6</option>
+                                    </optgroup>
+                                    <optgroup label="Зона 'Восток' (Топчаны)">
+                                        <option value="Восток 1">Восток 1</option>
+                                        <option value="Восток 2">Восток 2</option>
+                                        <option value="Восток 3">Восток 3</option>
+                                        <option value="Восток 4">Восток 4</option>
+                                        <option value="Восток 5">Восток 5</option>
+                                        <option value="Восток 6">Восток 6</option>
+                                        <option value="Восток 7">Восток 7</option>
+                                        <option value="Восток 8">Восток 8</option>
+                                    </optgroup>
+                                    <optgroup label="Отдельные домики">
+                                        <option value="Беседка 1">Беседка 1</option>
+                                        <option value="Беседка 2">Беседка 2</option>
+                                        <option value="Типи">Типи</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="review-link-output" class="block text-sm font-medium text-gray-700 mb-1">Сгенерированная Ссылка</label>
+                                <input type="text" id="review-link-output" class="admin-input bg-gray-100" readonly>
+                            </div>
+                            <div class="qr-code-parent flex hidden">
+                                <img class="qr-code-review h-40" src="" alt="qr-code-review">
+                                <button type="button" id="download-qr-review" class="max-w-40 m-4 mt-16 p-2 rounded-md w-full h-10 border bg-[#597e52] text-white">Скачать</button>
+                            </div>
+                            <button type="submit" class="admin-submit-button w-full">Сгенерировать Ссылку</button>
+                            <div id="review-link-message" class="message"></div>
+                        </form>
                     </div>
-                    <div class="qr-code-parent flex hidden">
-                        <img class="qr-code h-40" src="" alt="qr-code">
-                        <button id="download-qr" class="max-w-40 m-4 mt-16 p-2 rounded-md w-full h-10 border bg-[#597e52] text-white">Скачать</button>
-                    </div>
-                    <button type="submit" class="admin-submit-button w-full">Сгенерировать Ссылку</button>
-                    <div id="location-link-message" class="message"></div>
-                </form>
+                </div>
             </div>
         </section>
     </div>
