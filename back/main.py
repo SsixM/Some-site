@@ -1,3 +1,4 @@
+# main.py (updated with pagination for orders and reviews)
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import jwt
@@ -79,6 +80,16 @@ def init_db():
                 payment_status TEXT NOT NULL,
                 table_number TEXT NOT NULL,
                 payment_comment TEXT
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS reviews (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                rating INTEGER NOT NULL,
+                review_text TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         conn.commit()
@@ -168,6 +179,21 @@ def migrate_db():
                 ('other', 'Другие')
             ]
             conn.executemany('INSERT INTO categories (value, name) VALUES (?, ?)', categories)
+            conn.commit()
+
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='reviews'")
+        if not cursor.fetchone():
+            app.logger.info("Creating reviews table...")
+            conn.execute('''
+                CREATE TABLE reviews (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    phone TEXT NOT NULL,
+                    rating INTEGER NOT NULL,
+                    review_text TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
             conn.commit()
 
 @app.route('/')
@@ -383,8 +409,14 @@ def get_orders():
     username, error, status = verify_token(token)
     if error:
         return jsonify(error), status
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 10))
+    offset = (page - 1) * limit
     conn = get_db_connection()
-    orders = conn.execute('SELECT * FROM orders ORDER BY created_at DESC').fetchall()
+    cursor = conn.cursor()
+    cursor.execute('SELECT COUNT(*) FROM orders')
+    total = cursor.fetchone()[0]
+    orders = conn.execute('SELECT * FROM orders ORDER BY created_at DESC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
     conn.close()
     orders_list = []
     for order in orders:
@@ -401,7 +433,7 @@ def get_orders():
             'table_number': order['table_number'],
             'payment_comment': order['payment_comment']
         })
-    return jsonify({'orders': orders_list})
+    return jsonify({'orders': orders_list, 'total': total, 'page': page, 'limit': limit})
 
 @app.route('/api/take-order/<int:order_id>', methods=['POST'])
 def take_order(order_id):
@@ -472,6 +504,68 @@ def update_payment_status(order_id):
     conn.close()
     return jsonify({'message': 'Статус оплаты обновлен'})
 
+@app.route('/api/create-review', methods=['POST'])
+def create_review():
+    data = request.json
+    name = data.get('name')
+    phone = data.get('phone')
+    rating = data.get('rating')
+    review_text = data.get('review_text')
+    if not all([name, phone, rating, review_text]):
+        return jsonify({'error': 'Заполните все поля'}), 400
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO reviews (name, phone, rating, review_text)
+        VALUES (?, ?, ?, ?)
+    ''', (name, phone, rating, review_text))
+    conn.commit()
+    review_id = cursor.lastrowid
+    conn.close()
+    return jsonify({'message': 'Отзыв успешно создан', 'review_id': review_id})
+
+@app.route('/api/reviews', methods=['GET'])
+def get_reviews():
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    username, error, status = verify_token(token)
+    if error:
+        return jsonify(error), status
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 10))
+    offset = (page - 1) * limit
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT COUNT(*) FROM reviews')
+    total = cursor.fetchone()[0]
+    reviews = conn.execute('SELECT * FROM reviews ORDER BY created_at DESC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
+    conn.close()
+    reviews_list = []
+    for review in reviews:
+        reviews_list.append({
+            'id': review['id'],
+            'name': review['name'],
+            'phone': review['phone'],
+            'rating': review['rating'],
+            'review_text': review['review_text'],
+            'timestamp': review['created_at']
+        })
+    return jsonify({'reviews': reviews_list, 'total': total, 'page': page, 'limit': limit})
+@app.route('/api/remove-review/<int:review_id>', methods=['POST'])
+def remove_review(review_id):
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    username, error, status = verify_token(token)
+    if error:
+        return jsonify(error), status
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id FROM reviews WHERE id = ?', (review_id,))
+    if not cursor.fetchone():
+        conn.close()
+        return jsonify({'error': 'Отзыв не найден'}), 404
+    cursor.execute('DELETE FROM reviews WHERE id = ?', (review_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Отзыв успешно удален'})
 @app.route('/logout')
 def logout():
     return jsonify({'message': 'Logged out'})

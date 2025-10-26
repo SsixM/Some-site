@@ -1,3 +1,4 @@
+<!-- admin.html (updated with pagination for orders and reviews) -->
 <!DOCTYPE html>
 <html lang="ru" class="scroll-smooth">
 <head>
@@ -46,6 +47,12 @@
             .payment-status-select {
                 @apply w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#597e52];
             }
+            .pagination-button {
+                @apply px-3 py-1 mx-1 bg-gray-200 text-gray-700 rounded-md hover:bg-[#597e52] hover:text-white transition;
+            }
+            .pagination-button.active {
+                @apply bg-[#597e52] text-white;
+            }
         }
     </style>
     <script>
@@ -73,10 +80,12 @@
             const locationLinkForm = document.getElementById('location-link-form');
             const locationLinkMessage = document.getElementById('location-link-message');
             const locationLinkOutput = document.getElementById('location-link-output');
-            const reviewLinkForm = document.getElementById('review-link-form');
-            const reviewLinkMessage = document.getElementById('review-link-message');
-            const reviewLinkOutput = document.getElementById('review-link-output');
             const token = localStorage.getItem('token');
+            let ordersCurrentPage = 1;
+            let ordersLimit = 10;
+            let reviewsCurrentPage = 1;
+            let reviewsLimit = 10;
+
             async function checkAuth() {
                 try {
                     const response = await fetch('http://127.0.0.1:3000/api/orders', {
@@ -118,6 +127,61 @@
                         }
                     } catch (error) {
                         console.error('Error removing dish:', error);
+                        alert('Ошибка соединения с сервером');
+                    }
+                }
+                window.takeOrder = async function(orderId) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:3000/api/take-order/${orderId}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            loadOrders(ordersCurrentPage, ordersLimit);
+                        } else {
+                            alert(data.error || 'Ошибка взятия заказа');
+                        }
+                    } catch (error) {
+                        console.error('Error taking order:', error);
+                        alert('Ошибка соединения с сервером');
+                    }
+                }
+                window.closeOrder = async function(orderId) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:3000/api/close-order/${orderId}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            loadOrders(ordersCurrentPage, ordersLimit);
+                        } else {
+                            alert(data.error || 'Ошибка закрытия заказа');
+                        }
+                    } catch (error) {
+                        console.error('Error closing order:', error);
+                        alert('Ошибка соединения с сервером');
+                    }
+                }
+                async function updatePaymentStatus(orderId, paymentStatus, paymentComment) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:3000/api/update-payment-status/${orderId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ payment_status: paymentStatus, payment_comment: paymentComment })
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            loadOrders(ordersCurrentPage, ordersLimit);
+                        } else {
+                            alert(data.error || 'Ошибка обновления статуса оплаты');
+                        }
+                    } catch (error) {
+                        console.error('Error updating payment status:', error);
                         alert('Ошибка соединения с сервером');
                     }
                 }
@@ -179,9 +243,11 @@
                         removeSelect.appendChild(optRem);
                     });
                 }
-                async function loadOrders() {
+                async function loadOrders(page = 1, limit = 10) {
+                    ordersCurrentPage = page;
+                    ordersLimit = limit;
                     try {
-                        const response = await fetch('http://127.0.0.1:3000/api/orders', {
+                        const response = await fetch(`http://127.0.0.1:3000/api/orders?page=${page}&limit=${limit}`, {
                             headers: { 'Authorization': `Bearer ${token}` }
                         });
                         const data = await response.json();
@@ -249,89 +315,199 @@
                                 commentInput.addEventListener('change', () => updatePaymentStatus(order.id, select.value, commentInput.value));
                             }
                         });
+                        renderPagination('orders-pagination', data.total, data.page, data.limit, loadOrders);
                     } catch (error) {
                         console.error('Error loading orders:', error);
                     }
                 }
-                async function updatePaymentStatus(orderId, paymentStatus, paymentComment) {
+                window.removeReview = async function(reviewId) {
+                    if (!confirm('Вы уверены, что хотите удалить этот отзыв?')) return;
                     try {
-                        const response = await fetch(`http://127.0.0.1:3000/api/update-payment-status/${orderId}`, {
+                        const response = await fetch(`http://127.0.0.1:3000/api/remove-review/${reviewId}`, {
                             method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ payment_status: paymentStatus, payment_comment: paymentComment })
+                            headers: { 'Authorization': `Bearer ${token}` }
                         });
                         const data = await response.json();
                         if (response.ok) {
-                            loadOrders();
+                            loadReviews(reviewsCurrentPage, reviewsLimit);
                         } else {
-                            alert(data.error);
+                            alert(data.error || 'Ошибка удаления отзыва');
                         }
                     } catch (error) {
-                        console.error('Error updating payment status:', error);
+                        console.error('Error removing review:', error);
                         alert('Ошибка соединения с сервером');
                     }
                 }
-                window.takeOrder = async function(orderId) {
+                async function loadReviews(page = 1, limit = 10) {
+                    reviewsCurrentPage = page;
+                    reviewsLimit = limit;
                     try {
-                        const response = await fetch(`http://127.0.0.1:3000/api/take-order/${orderId}`, {
-                            method: 'POST',
+                        const response = await fetch(`http://127.0.0.1:3000/api/reviews?page=${page}&limit=${limit}`, {
                             headers: { 'Authorization': `Bearer ${token}` }
                         });
                         const data = await response.json();
-                        if (response.ok) {
-                            loadOrders();
-                        } else {
-                            alert(data.error);
-                        }
-                    } catch (error) {
-                        console.error('Error taking order:', error);
-                    }
-                }
-                window.closeOrder = async function(orderId) {
-                    try {
-                        const response = await fetch(`http://127.0.0.1:3000/api/close-order/${orderId}`, {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` }
+                        const reviewsContainer = document.getElementById('reviews-list');
+                        reviewsContainer.innerHTML = '';
+                        data.reviews.forEach(review => {
+                            const reviewDiv = document.createElement('div');
+                            reviewDiv.className = 'p-4 border rounded-md bg-gray-50 shadow-sm mb-4';
+                            reviewDiv.innerHTML = `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="font-bold text-lg mb-1">Отзыв #${review.id}</p>
+                                        <p>Время: ${new Date(review.timestamp).toLocaleString('ru-RU')}</p>
+                                        <p>Имя: ${review.name}</p>
+                                        <p>Телефон: ${review.phone}</p>
+                                        <p>Оценка: ${review.rating}/5</p>
+                                        <p class="mt-2">${review.review_text}</p>
+                                    </div>
+                                    <button class="bg-red-500 text-white p-2 rounded-md hover:bg-red-600" onclick="window.removeReview(${review.id})">Удалить</button>
+                                </div>
+                            `;
+                            reviewsContainer.appendChild(reviewDiv);
                         });
-                        const data = await response.json();
-                        if (response.ok) {
-                            loadOrders();
-                        } else {
-                            alert(data.error);
-                        }
+                        renderPagination('reviews-pagination', data.total, data.page, data.limit, loadReviews);
                     } catch (error) {
-                        console.error('Error closing order:', error);
+                        console.error('Error loading reviews:', error);
                     }
                 }
-                function GenerateQR(myUrl, imgClass = 'qr-code') {
-                    const img = document.querySelector(`.${imgClass}`);
-                    QRCode.toDataURL(myUrl, function (error, dataUrl) {
-                        if (error) {
-                            console.error(error);
-                        } else {
-                            img.src = dataUrl;
-                            img.closest('.qr-code-parent').classList.remove('hidden');
-                        }
+                function renderPagination(containerId, total, currentPage, limit, loadFunction) {
+                    const container = document.getElementById(containerId);
+                    container.innerHTML = '';
+                    const totalPages = Math.ceil(total / limit);
+                    for (let i = 1; i <= totalPages; i++) {
+                        const button = document.createElement('button');
+                        button.textContent = i;
+                        button.className = `pagination-button ${i === currentPage ? 'active' : ''}`;
+                        button.onclick = () => loadFunction(i, limit);
+                        container.appendChild(button);
+                    }
+                    const limitSelect = document.createElement('select');
+                    limitSelect.className = 'ml-4 p-1 border rounded-md';
+                    [10, 20, 50].forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt;
+                        option.textContent = `${opt}`;
+                        option.selected = opt === limit;
+                        limitSelect.appendChild(option);
                     });
+                    limitSelect.onchange = (e) => loadFunction(1, parseInt(e.target.value));
+                    container.appendChild(limitSelect);
                 }
-                function DownloadQR(imgClass = 'qr-code') {
-                    const img = document.querySelector(`.${imgClass}`).src;
-                    const link = document.createElement('a');
-                    link.href = img;
-                    link.download = 'qr-code.png';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
-                document.getElementById('download-qr').addEventListener('click', () => DownloadQR('qr-code'))
-                document.getElementById('download-qr-review').addEventListener('click', () => DownloadQR('qr-code-review'))
-                locationLinkForm.addEventListener('submit', async function(event) {
-                    event.preventDefault();
-                    locationLinkMessage.textContent = '';
-                    locationLinkOutput.value = '';
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        tabContents.forEach(content => content.classList.add('hidden'));
+                        const targetContent = document.getElementById(`${button.dataset.tab}-content`);
+                        targetContent.classList.remove('hidden');
+                        if (button.dataset.tab === 'orders') loadOrders(ordersCurrentPage, ordersLimit);
+                        if (button.dataset.tab === 'dishes') {
+                            const subTabs = document.querySelectorAll('.admin-sub-tab-button');
+                            subTabs.forEach(sub => sub.classList.remove('active'));
+                            subTabs[0].classList.add('active');
+                            const subContents = document.querySelectorAll('[data-sub-tab-content]');
+                            subContents.forEach(subContent => subContent.classList.add('hidden'));
+                            document.getElementById('add-dish-sub-content').classList.remove('hidden');
+                            loadDishes();
+                            loadCategories();
+                        }
+                        if (button.dataset.tab === 'categories') {
+                            const subTabs = document.querySelectorAll('.admin-sub-tab-button');
+                            subTabs.forEach(sub => sub.classList.remove('active'));
+                            subTabs[0].classList.add('active');
+                            const subContents = document.querySelectorAll('[data-sub-tab-content]');
+                            subContents.forEach(subContent => subContent.classList.add('hidden'));
+                            document.getElementById('add-category-sub-content').classList.remove('hidden');
+                            loadCategories();
+                        }
+                        if (button.dataset.tab === 'reviews') loadReviews(reviewsCurrentPage, reviewsLimit);
+                    });
+                });
+                const subTabButtons = document.querySelectorAll('.admin-sub-tab-button');
+                subTabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        subTabButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        const subContents = document.querySelectorAll('[data-sub-tab-content]');
+                        subContents.forEach(content => content.classList.add('hidden'));
+                        const targetSubContent = document.getElementById(`${button.dataset.subTab}-sub-content`);
+                        targetSubContent.classList.remove('hidden');
+                        if (button.dataset.subTab === 'remove-dish') loadDishes();
+                    });
+                });
+                addDishForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(addDishForm);
+                    try {
+                        const response = await fetch('http://127.0.0.1:3000/api/add-dish', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        addDishMessage.textContent = data.message || data.error;
+                        addDishMessage.classList.add(response.ok ? 'success-message' : 'error-message');
+                        addDishMessage.classList.remove(response.ok ? 'error-message' : 'success-message');
+                        if (response.ok) {
+                            addDishForm.reset();
+                            loadDishes();
+                        }
+                    } catch (error) {
+                        console.error('Error adding dish:', error);
+                        addDishMessage.textContent = 'Ошибка соединения с сервером';
+                        addDishMessage.classList.add('error-message');
+                    }
+                });
+                addCategoryForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(addCategoryForm);
+                    try {
+                        const response = await fetch('http://127.0.0.1:3000/api/add-category', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        addCategoryMessage.textContent = data.message || data.error;
+                        addCategoryMessage.classList.add(response.ok ? 'success-message' : 'error-message');
+                        addCategoryMessage.classList.remove(response.ok ? 'error-message' : 'success-message');
+                        if (response.ok) {
+                            addCategoryForm.reset();
+                            loadCategories();
+                        }
+                    } catch (error) {
+                        console.error('Error adding category:', error);
+                        addCategoryMessage.textContent = 'Ошибка соединения с сервером';
+                        addCategoryMessage.classList.add('error-message');
+                    }
+                });
+                removeCategoryForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    if (!confirm('Вы уверены, что хотите удалить категорию? Все блюда в ней будут удалены.')) return;
+                    const formData = new FormData(removeCategoryForm);
+                    try {
+                        const response = await fetch('http://127.0.0.1:3000/api/remove-category', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: formData
+                        });
+                        const data = await response.json();
+                        removeCategoryMessage.textContent = data.message || data.error;
+                        removeCategoryMessage.classList.add(response.ok ? 'success-message' : 'error-message');
+                        removeCategoryMessage.classList.remove(response.ok ? 'error-message' : 'success-message');
+                        if (response.ok) {
+                            removeCategoryForm.reset();
+                            loadCategories();
+                        }
+                    } catch (error) {
+                        console.error('Error removing category:', error);
+                        removeCategoryMessage.textContent = 'Ошибка соединения с сервером';
+                        removeCategoryMessage.classList.add('error-message');
+                    }
+                });
+                locationLinkForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
                     const formData = new FormData(locationLinkForm);
                     try {
                         const response = await fetch('http://127.0.0.1:3000/api/generate-table-link', {
@@ -342,187 +518,29 @@
                         const data = await response.json();
                         if (response.ok) {
                             locationLinkOutput.value = data.link;
-                            GenerateQR(data.link, 'qr-code');
                             locationLinkMessage.textContent = 'Ссылка успешно сгенерирована';
                             locationLinkMessage.classList.add('success-message');
-                            localStorage.setItem('location', formData.get('location'));
                         } else {
                             locationLinkMessage.textContent = data.error || 'Ошибка генерации ссылки';
                             locationLinkMessage.classList.add('error-message');
                         }
                     } catch (error) {
+                        console.error('Error generating link:', error);
                         locationLinkMessage.textContent = 'Ошибка соединения с сервером';
                         locationLinkMessage.classList.add('error-message');
-                        console.error('Fetch error:', error);
                     }
                 });
-                reviewLinkForm.addEventListener('submit', async function(event) {
-                    event.preventDefault();
-                    reviewLinkMessage.textContent = '';
-                    reviewLinkOutput.value = '';
-                    const formData = new FormData(reviewLinkForm);
-                    const location = formData.get('location');
-                    const baseUrl = window.location.origin;
-                    const reviewLink = `${baseUrl}/reviews.html?table=${encodeURIComponent(location)}`;
-                    reviewLinkOutput.value = reviewLink;
-                    GenerateQR(reviewLink, 'qr-code-review');
-                    reviewLinkMessage.textContent = 'Ссылка успешно сгенерирована';
-                    reviewLinkMessage.classList.add('success-message');
-                });
-                addDishForm.addEventListener('submit', async function(event) {
-                    event.preventDefault();
-                    addDishMessage.textContent = '';
-                    const formData = new FormData(addDishForm);
-                    try {
-                        const response = await fetch('http://127.0.0.1:3000/api/add-dish', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` },
-                            body: formData
-                        });
-                        const data = await response.json();
-                        if (response.ok) {
-                            addDishMessage.textContent = data.message;
-                            addDishMessage.classList.add('success-message');
-                            addDishForm.reset();
-                            loadCategories();
-                        } else {
-                            addDishMessage.textContent = data.error || 'Ошибка добавления блюда';
-                            addDishMessage.classList.add('error-message');
-                        }
-                    } catch (error) {
-                        addDishMessage.textContent = 'Ошибка соединения с сервером';
-                        addDishMessage.classList.add('error-message');
-                        console.error('Fetch error:', error);
-                    }
-                });
-                addCategoryForm.addEventListener('submit', async function(event) {
-                    event.preventDefault();
-                    addCategoryMessage.textContent = '';
-                    const formData = new FormData(addCategoryForm);
-                    try {
-                        const response = await fetch('http://127.0.0.1:3000/api/add-category', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` },
-                            body: formData
-                        });
-                        const data = await response.json();
-                        if (response.ok) {
-                            addCategoryMessage.textContent = data.message;
-                            addCategoryMessage.classList.add('success-message');
-                            addCategoryForm.reset();
-                            loadCategories();
-                        } else {
-                            addCategoryMessage.textContent = data.error || 'Ошибка добавления категории';
-                            addCategoryMessage.classList.add('error-message');
-                        }
-                    } catch (error) {
-                        addCategoryMessage.textContent = 'Ошибка соединения с сервером';
-                        addCategoryMessage.classList.add('error-message');
-                        console.error('Fetch error:', error);
-                    }
-                });
-                removeCategoryForm.addEventListener('submit', async function(event) {
-                    event.preventDefault();
-                    removeCategoryMessage.textContent = '';
-                    const formData = new FormData(removeCategoryForm);
-                    try {
-                        const response = await fetch('http://127.0.0.1:3000/api/remove-category', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` },
-                            body: formData
-                        });
-                        const data = await response.json();
-                        if (response.ok) {
-                            removeCategoryMessage.textContent = data.message;
-                            removeCategoryMessage.classList.add('success-message');
-                            loadCategories();
-                        } else {
-                            removeCategoryMessage.textContent = data.error || 'Ошибка удаления категории';
-                            removeCategoryMessage.classList.add('error-message');
-                        }
-                    } catch (error) {
-                        removeCategoryMessage.textContent = 'Ошибка соединения с сервером';
-                        removeCategoryMessage.classList.add('error-message');
-                        console.error('Fetch error:', error);
-                    }
-                });
-                function switchTab(targetTab) {
-                    tabButtons.forEach(button => {
-                        button.classList.remove('active');
-                        if (button.dataset.tab === targetTab) {
-                            button.classList.add('active');
-                        }
-                    });
-                    tabContents.forEach(content => {
-                        content.classList.add('hidden');
-                        if (content.id === `${targetTab}-content`) {
-                            content.classList.remove('hidden');
-                            const subTabNav = content.querySelector('.admin-sub-tabs');
-                            if (subTabNav) {
-                                const subTabButtons = subTabNav.querySelectorAll('.admin-sub-tab-button');
-                                const activeSubTab = Array.from(subTabButtons).find(btn => btn.classList.contains('active')) || subTabButtons[0];
-                                if (activeSubTab) {
-                                    switchSubTab(activeSubTab.dataset.subTab, content);
-                                }
-                            }
-                            if (targetTab === 'orders') {
-                                loadOrders();
-                            } else if (targetTab === 'dishes' || targetTab === 'categories') {
-                                loadCategories();
-                            }
-                        }
-                    });
-                }
-                function switchSubTab(targetSubTab, contextPanel) {
-                    const subTabButtons = contextPanel.querySelectorAll('.admin-sub-tab-button');
-                    subTabButtons.forEach(button => {
-                        button.classList.remove('active');
-                        if (button.dataset.subTab === targetSubTab) {
-                            button.classList.add('active');
-                        }
-                    });
-                    const subTabContents = contextPanel.querySelectorAll('[data-sub-tab-content]');
-                    subTabContents.forEach(content => {
-                        content.classList.add('hidden');
-                        if (content.id === `${targetSubTab}-sub-content`) {
-                            content.classList.remove('hidden');
-                            if (targetSubTab === 'remove-dish') {
-                                loadDishes();
-                            }
-                            if (targetSubTab === 'remove-category') {
-                                loadCategories();
-                            }
-                        }
-                    });
-                }
-                contentContainer.addEventListener('click', (event) => {
-                    const button = event.target.closest('.admin-sub-tab-button');
-                    if (button) {
-                        const contextPanel = button.closest('[data-tab-content]');
-                        if (contextPanel) {
-                            switchSubTab(button.dataset.subTab, contextPanel);
-                        }
-                    }
-                });
-                tabsContainer.addEventListener('click', (event) => {
-                    const button = event.target.closest('.admin-tab-button');
-                    if (button) {
-                        switchTab(button.dataset.tab);
-                    }
-                });
-                switchTab('orders');
-                document.getElementById('logout').addEventListener('click', async function() {
+                document.getElementById('logout').addEventListener('click', () => {
                     localStorage.removeItem('token');
-                    localStorage.removeItem('location');
                     window.location.href = './login.html';
                 });
+                tabButtons[0].click();
             })();
         }
     </script>
 </head>
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-<body class="bg-white text-black font-sans">
-<div class="container mx-auto p-10 max-w-7xl">
+<body class="bg-white text-gray-800 font-sans min-h-screen">
+<div class="container mx-auto p-4 sm:p-10 max-w-7xl">
     <h1 class="text-5xl font-bold text-center mb-12 tracking-tighter">Админ Панель</h1>
     <div class="sticky top-0 z-10 bg-white shadow-md border-t mb-10">
         <div class="container mx-auto max-w-7xl px-2">
@@ -531,6 +549,7 @@
                 <button data-tab="dishes" class="admin-tab-button">Блюда</button>
                 <button data-tab="categories" class="admin-tab-button">Категории</button>
                 <button data-tab="create-links" class="admin-tab-button">Создание ссылок</button>
+                <button data-tab="reviews" class="admin-tab-button">Отзывы</button>
             </nav>
         </div>
     </div>
@@ -539,6 +558,7 @@
             <h2 class="admin-content-title">Актуальные Заказы</h2>
             <div class="admin-card space-y-4">
                 <div id="orders-list" class="space-y-4"></div>
+                <div id="orders-pagination" class="flex justify-center mt-4"></div>
             </div>
         </section>
         <section id="dishes-content" data-tab-content class="space-y-6 hidden">
@@ -623,7 +643,6 @@
             <h2 class="admin-content-title">Генерация Ссылок</h2>
             <div class="admin-sub-tabs flex space-x-6 border-b pb-2 mb-4">
                 <button data-sub-tab="menu-link" class="admin-sub-tab-button active">Ссылка на меню</button>
-                <button data-sub-tab="review-link" class="admin-sub-tab-button">Ссылка на отзывы</button>
             </div>
             <div class="sub-content-container">
                 <div id="menu-link-sub-content" data-sub-tab-content class="space-y-6">
@@ -682,62 +701,13 @@
                         </form>
                     </div>
                 </div>
-                <div id="review-link-sub-content" data-sub-tab-content class="space-y-6 hidden">
-                    <div class="admin-card space-y-4">
-                        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Генерация Ссылки на Отзывы</h3>
-                        <form id="review-link-form" class="space-y-4">
-                            <div>
-                                <label for="review-location-selection" class="block text-sm font-medium text-gray-700 mb-1">Выберите локацию</label>
-                                <select id="review-location-selection" name="location" class="admin-input" required>
-                                    <option value="" disabled selected>Выберите из списка...</option>
-                                    <optgroup label="Ресторан (Столики)">
-                                        <option value="Столик 1">Столик 1</option>
-                                        <option value="Столик 2">Столик 2</option>
-                                        <option value="Столик 3">Столик 3</option>
-                                        <option value="Столик 4">Столик 4</option>
-                                        <option value="Столик 5">Столик 5</option>
-                                        <option value="Столик 6">Столик 6</option>
-                                        <option value="Столик 7">Столик 7</option>
-                                        <option value="Столик 8">Столик 8</option>
-                                    </optgroup>
-                                    <optgroup label="Зона 'Азия' (Топчаны)">
-                                        <option value="Азия 1">Азия 1</option>
-                                        <option value="Азия 2">Азия 2</option>
-                                        <option value="Азия 3">Азия 3</option>
-                                        <option value="Азия 4">Азия 4</option>
-                                        <option value="Азия 5">Азия 5</option>
-                                        <option value="Азия 6">Азия 6</option>
-                                    </optgroup>
-                                    <optgroup label="Зона 'Восток' (Топчаны)">
-                                        <option value="Восток 1">Восток 1</option>
-                                        <option value="Восток 2">Восток 2</option>
-                                        <option value="Восток 3">Восток 3</option>
-                                        <option value="Восток 4">Восток 4</option>
-                                        <option value="Восток 5">Восток 5</option>
-                                        <option value="Восток 6">Восток 6</option>
-                                        <option value="Восток 7">Восток 7</option>
-                                        <option value="Восток 8">Восток 8</option>
-                                    </optgroup>
-                                    <optgroup label="Отдельные домики">
-                                        <option value="Беседка 1">Беседка 1</option>
-                                        <option value="Беседка 2">Беседка 2</option>
-                                        <option value="Типи">Типи</option>
-                                    </optgroup>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="review-link-output" class="block text-sm font-medium text-gray-700 mb-1">Сгенерированная Ссылка</label>
-                                <input type="text" id="review-link-output" class="admin-input bg-gray-100" readonly>
-                            </div>
-                            <div class="qr-code-parent flex hidden">
-                                <img class="qr-code-review h-40" src="" alt="qr-code-review">
-                                <button type="button" id="download-qr-review" class="max-w-40 m-4 mt-16 p-2 rounded-md w-full h-10 border bg-[#597e52] text-white">Скачать</button>
-                            </div>
-                            <button type="submit" class="admin-submit-button w-full">Сгенерировать Ссылку</button>
-                            <div id="review-link-message" class="message"></div>
-                        </form>
-                    </div>
-                </div>
+            </div>
+        </section>
+        <section id="reviews-content" data-tab-content class="space-y-6 hidden">
+            <h2 class="admin-content-title">Отзывы</h2>
+            <div class="admin-card space-y-4">
+                <div id="reviews-list" class="space-y-4"></div>
+                <div id="reviews-pagination" class="flex justify-center mt-4"></div>
             </div>
         </section>
     </div>

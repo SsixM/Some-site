@@ -1,3 +1,4 @@
+<!-- cart.html (no changes needed, already has localStorage.setItem('phoneNumber', phone)) -->
 <!doctype html>
 <html lang="ru" class="scroll-smooth">
 <head>
@@ -386,13 +387,9 @@
                 const result = await response.json();
                 const checkoutMessage = document.getElementById('checkout-message');
                 if (response.ok) {
-                    checkoutMessage.textContent = `Заказ #${result.order_id} успешно создан`;
-                    checkoutMessage.classList.add('success-message');
-                    checkoutMessage.classList.remove('error-message');
+                    localStorage.setItem('phoneNumber', phone);
                     localStorage.removeItem('cart');
-                    setTimeout(() => {
-                        window.location.href = './index.html?modal=ordered';
-                    }, 2000);
+                    window.location.href = './index.html?modal=ordered';
                 } else {
                     checkoutMessage.textContent = result.error || 'Ошибка создания заказа';
                     checkoutMessage.classList.add('error-message');
@@ -404,28 +401,28 @@
                 document.getElementById('checkout-message').classList.remove('success-message');
             }
         });
-document.getElementById('user-phone').addEventListener('input', (e) => {
-    let value = e.target.value.replace(/\D/g, ''); // Удаляем все нечисловые символы
-    if (value.length > 12) value = value.slice(0, 12); // Ограничиваем длину до 12 цифр (+998 и 9 цифр номера)
+        document.getElementById('user-phone').addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, ''); // Удаляем все нечисловые символы
+            if (value.length > 12) value = value.slice(0, 12); // Ограничиваем длину до 12 цифр (+998 и 9 цифр номера)
 
-    let formatted = '';
-    if (value.length === 0) {
-        e.target.value = ''; // Пустое поле, если ничего не введено
-        return;
-    }
+            let formatted = '';
+            if (value.length === 0) {
+                e.target.value = ''; // Пустое поле, если ничего не введено
+                return;
+            }
 
-    // Добавляем префикс +998, если он еще не введен
-    formatted = '+998';
-    value = value.startsWith('998') ? value.slice(3) : value;
+            // Добавляем префикс +998, если он еще не введен
+            formatted = '+998';
+            value = value.startsWith('998') ? value.slice(3) : value;
 
-    // Форматируем оставшуюся часть номера
-    if (value.length > 0) formatted += ` (${value.slice(0, 2)})`;
-    if (value.length > 2) formatted += ` ${value.slice(2, 5)}`;
-    if (value.length > 5) formatted += `-${value.slice(5, 7)}`;
-    if (value.length > 7) formatted += `-${value.slice(7, 9)}`;
+            // Форматируем оставшуюся часть номера
+            if (value.length > 0) formatted += ` (${value.slice(0, 2)})`;
+            if (value.length > 2) formatted += ` ${value.slice(2, 5)}`;
+            if (value.length > 5) formatted += `-${value.slice(5, 7)}`;
+            if (value.length > 7) formatted += `-${value.slice(7, 9)}`;
 
-    e.target.value = formatted;
-}); 
+            e.target.value = formatted;
+        }); 
         loadCart();
     }
 </script>
