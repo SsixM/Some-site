@@ -1,4 +1,4 @@
-<!-- admin.html (updated with pagination for orders and reviews) -->
+<!-- admin.html -->
 <!DOCTYPE html>
 <html lang="ru" class="scroll-smooth">
 <head>
@@ -253,66 +253,87 @@
                         const data = await response.json();
                         const ordersContainer = document.getElementById('orders-list');
                         ordersContainer.innerHTML = '';
+                        const groupedOrders = {
+                            'new': [],
+                            'in_progress': [],
+                            'closed': []
+                        };
                         data.orders.forEach(order => {
-                            const orderDiv = document.createElement('div');
-                            orderDiv.className = 'p-4 border rounded-md bg-gray-50 shadow-sm mb-4 grid grid-cols-1 lg:grid-cols-3 gap-4';
-                            orderDiv.innerHTML = `
-                                <div class="col-span-1">
-                                    <p class="font-bold text-lg mb-1">Заказ #${order.id}</p>
-                                    <p>Столик: ${order.table_number}</p>
-                                    <p>Время заказа: ${new Date(order.timestamp).toLocaleString('ru-RU')}</p>
-                                    <p>Имя: ${order.user_name}</p>
-                                    <p>Номер телефона: ${order.phone}</p>
-                                    <p>Метод оплаты: ${order.payment_method === 'cash' ? 'Наличные/Карта' : order.payment_method.charAt(0).toUpperCase() + order.payment_method.slice(1)}</p>
-                                    <p>Статус оплаты: <span class="${order.payment_status === 'Оплачен' ? 'text-green-600' : order.payment_status === 'Оплата при выезде' ? 'text-blue-600' : 'text-red-600'} font-medium">${order.payment_status}</span></p>
-                                    ${order.payment_status === 'Оплата при выезде' && order.payment_comment ? `<p>Комментарий: ${order.payment_comment}</p>` : ''}
-                                    <div class="mt-2">
-                                        <select class="payment-status-select" data-order-id="${order.id}">
-                                            <option value="Оплачен" ${order.payment_status === 'Оплачен' ? 'selected' : ''}>Оплачен</option>
-                                            <option value="Не оплачен" ${order.payment_status === 'Не оплачен' ? 'selected' : ''}>Не оплачен</option>
-                                            <option value="Оплата при выезде" ${order.payment_status === 'Оплата при выезде' ? 'selected' : ''}>Оплата при выезде</option>
-                                        </select>
-                                        ${order.payment_status === 'Оплата при выезде' ? `
-                                            <input type="text" class="admin-input mt-2 payment-comment" placeholder="ФИО для оплаты при выезде" value="${order.payment_comment || ''}">
-                                        ` : ''}
-                                    </div>
-                                    <p class="mb-2 mt-2">Статус заказа: <span class="${order.status === 'new' ? 'text-green-600' : order.status === 'in_progress' ? 'text-yellow-600' : 'text-red-600'} font-medium">${order.status === 'new' ? 'Новый' : order.status === 'in_progress' ? 'В процессе' : 'Закрыт'}</span></p>
-                                    <div class="mt-4 space-x-2">
-                                        ${order.status === 'new' ? `<button class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700" onclick="window.takeOrder(${order.id})">Взять заказ</button>` : ''}
-                                        ${order.status !== 'closed' ? `<button class="bg-red-500 text-white p-2 rounded-md hover:bg-red-700" onclick="window.closeOrder(${order.id})">Закрыть заказ</button>` : ''}
-                                    </div>
-                                </div>
-                                <div class="col-span-2">
-                                    <p class="font-semibold mb-1">Состав заказа:</p>
-                                    <ul class="list-disc list-inside ml-2 text-sm text-gray-800 space-y-0.5">
-                                        ${order.items.map(item => `<li>${item.name} x ${item.quantity} - ${item.price * item.quantity} ₽</li>`).join('')}
-                                    </ul>
-                                </div>
-                            `;
-                            ordersContainer.appendChild(orderDiv);
-                            const select = orderDiv.querySelector('.payment-status-select');
-                            const commentInput = orderDiv.querySelector('.payment-comment');
-                            select.addEventListener('change', async () => {
-                                const paymentStatus = select.value;
-                                let paymentComment = '';
-                                if (paymentStatus === 'Оплата при выезде') {
-                                    if (!commentInput) {
-                                        const input = document.createElement('input');
-                                        input.type = 'text';
-                                        input.className = 'admin-input mt-2 payment-comment';
-                                        input.placeholder = 'ФИО для оплаты при выезде';
-                                        select.parentElement.appendChild(input);
-                                        input.addEventListener('change', () => updatePaymentStatus(order.id, paymentStatus, input.value));
-                                        return;
+                            groupedOrders[order.status].push(order);
+                        });
+                        const statusTitles = {
+                            'new': 'Новые Заказы',
+                            'in_progress': 'Заказы в Процессе',
+                            'closed': 'Закрытые Заказы'
+                        };
+                        ['new', 'in_progress', 'closed'].forEach(status => {
+                            if (groupedOrders[status].length > 0) {
+                                const header = document.createElement('h3');
+                                header.className = 'text-2xl font-bold mt-8 mb-4 text-[#597e52]';
+                                header.textContent = statusTitles[status];
+                                ordersContainer.appendChild(header);
+                                groupedOrders[status].forEach(order => {
+                                    const orderDiv = document.createElement('div');
+                                    orderDiv.className = 'p-4 border rounded-md bg-gray-50 shadow-sm mb-4 grid grid-cols-1 lg:grid-cols-3 gap-4';
+                                    orderDiv.innerHTML = `
+                                        <div class="col-span-1">
+                                            <p class="font-bold text-lg mb-1">Заказ #${order.id}</p>
+                                            <p>Столик: ${order.table_number}</p>
+                                            <p>Время заказа: ${new Date(order.timestamp).toLocaleString('ru-RU')}</p>
+                                            <p>Имя: ${order.user_name}</p>
+                                            <p>Номер телефона: ${order.phone}</p>
+                                            <p>Метод оплаты: ${order.payment_method === 'cash' ? 'Наличные/Карта' : order.payment_method.charAt(0).toUpperCase() + order.payment_method.slice(1)}</p>
+                                            <p>Статус оплаты: <span class="${order.payment_status === 'Оплачен' ? 'text-green-600' : order.payment_status === 'Оплата при выезде' ? 'text-blue-600' : 'text-red-600'} font-medium">${order.payment_status}</span></p>
+                                            ${order.payment_status === 'Оплата при выезде' && order.payment_comment ? `<p>Комментарий: ${order.payment_comment}</p>` : ''}
+                                            <div class="mt-2">
+                                                <select class="payment-status-select" data-order-id="${order.id}">
+                                                    <option value="Оплачен" ${order.payment_status === 'Оплачен' ? 'selected' : ''}>Оплачен</option>
+                                                    <option value="Не оплачен" ${order.payment_status === 'Не оплачен' ? 'selected' : ''}>Не оплачен</option>
+                                                    <option value="Оплата при выезде" ${order.payment_status === 'Оплата при выезде' ? 'selected' : ''}>Оплата при выезде</option>
+                                                </select>
+                                                ${order.payment_status === 'Оплата при выезде' ? `
+                                                    <input type="text" class="admin-input mt-2 payment-comment" placeholder="ФИО для оплаты при выезде" value="${order.payment_comment || ''}">
+                                                ` : ''}
+                                            </div>
+                                            <p class="mb-2 mt-2">Статус заказа: <span class="${order.status === 'new' ? 'text-green-600' : order.status === 'in_progress' ? 'text-yellow-600' : 'text-red-600'} font-medium">${order.status === 'new' ? 'Новый' : order.status === 'in_progress' ? 'В процессе' : 'Закрыт'}</span></p>
+                                            <div class="mt-4 space-x-2">
+                                                ${order.status === 'new' ? `<button class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700" onclick="window.takeOrder(${order.id})">Взять заказ</button>` : ''}
+                                                ${order.status !== 'closed' ? `<button class="bg-red-500 text-white p-2 rounded-md hover:bg-red-700" onclick="window.closeOrder(${order.id})">Закрыть заказ</button>` : ''}
+                                            </div>
+                                        </div>
+                                        <div class="col-span-2">
+                                            <p class="font-semibold mb-1">Состав заказа:</p>
+                                            <ul class="list-disc list-inside ml-2 text-sm text-gray-800 space-y-0.5">
+                                                ${order.items.map(item => `<li>${item.name} x ${item.quantity} - ${item.price * item.quantity} ₽</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    `;
+                                    ordersContainer.appendChild(orderDiv);
+                                    const select = orderDiv.querySelector('.payment-status-select');
+                                    const commentInput = orderDiv.querySelector('.payment-comment');
+                                    select.addEventListener('change', async () => {
+                                        const paymentStatus = select.value;
+                                        let paymentComment = '';
+                                        if (paymentStatus === 'Оплата при выезде') {
+                                            if (!commentInput) {
+                                                const input = document.createElement('input');
+                                                input.type = 'text';
+                                                input.className = 'admin-input mt-2 payment-comment';
+                                                input.placeholder = 'ФИО для оплаты при выезде';
+                                                select.parentElement.appendChild(input);
+                                                input.addEventListener('change', () => updatePaymentStatus(order.id, paymentStatus, input.value));
+                                                return;
+                                            }
+                                            paymentComment = commentInput.value;
+                                        } else if (commentInput) {
+                                            commentInput.remove();
+                                        }
+                                        await updatePaymentStatus(order.id, paymentStatus, paymentComment);
+                                    });
+                                    if (commentInput) {
+                                        commentInput.addEventListener('change', () => updatePaymentStatus(order.id, select.value, commentInput.value));
                                     }
-                                    paymentComment = commentInput.value;
-                                } else if (commentInput) {
-                                    commentInput.remove();
-                                }
-                                await updatePaymentStatus(order.id, paymentStatus, paymentComment);
-                            });
-                            if (commentInput) {
-                                commentInput.addEventListener('change', () => updatePaymentStatus(order.id, select.value, commentInput.value));
+                                });
                             }
                         });
                         renderPagination('orders-pagination', data.total, data.page, data.limit, loadOrders);

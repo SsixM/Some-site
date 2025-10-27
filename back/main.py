@@ -1,6 +1,8 @@
-# main.py (updated with pagination for orders and reviews)
+# main.py
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import jwt
 import bcrypt
 import sqlite3
@@ -12,12 +14,18 @@ app = Flask(__name__, static_folder='static')
 CORS(app, supports_credentials=True)
 SECRET_KEY = 'your-secret-key'
 
+# Initialize Flask-Limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address
+)
+
 logging.basicConfig(level=logging.DEBUG)
 
 users = [
     {
-        'username': '1',
-        'password': bcrypt.hashpw('1'.encode('utf-8'), bcrypt.gensalt())
+        'username': 'dfghdfghdfg',
+        'password': bcrypt.hashpw('rtyrtyyrtyrt'.encode('utf-8'), bcrypt.gensalt())
     }
 ]
 
@@ -201,6 +209,7 @@ def home():
     return send_from_directory('static', 'login.html')
 
 @app.route('/login', methods=['POST'])
+@limiter.limit("15 per hour")
 def login():
     username = request.form.get('username')
     password = request.form.get('password')
@@ -372,6 +381,7 @@ def verify_table():
         return jsonify({'error': 'Неверная локация'}), 400
 
 @app.route('/api/create-order', methods=['POST'])
+@limiter.limit("6 per hour")
 def create_order():
     data = request.json
     user_name = data.get('user_name')
@@ -380,8 +390,13 @@ def create_order():
     payment_method = data.get('payment_method')
     table_number = data.get('table_number')
 
+    # Validate input lengths
     if not all([user_name, phone, cart, payment_method, table_number]):
         return jsonify({'error': 'Заполните все поля'}), 400
+    if len(user_name) > 30:
+        return jsonify({'error': 'Имя не должно превышать 30 символов'}), 400
+    if len(phone) > 30:
+        return jsonify({'error': 'Номер телефона не должен превышать 30 символов'}), 400
 
     payment_status = 'Оплачен' if payment_method in ['click', 'payme'] else 'Не оплачен'
 
@@ -416,7 +431,17 @@ def get_orders():
     cursor = conn.cursor()
     cursor.execute('SELECT COUNT(*) FROM orders')
     total = cursor.fetchone()[0]
-    orders = conn.execute('SELECT * FROM orders ORDER BY created_at DESC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
+    orders = conn.execute('''
+        SELECT * FROM orders
+        ORDER BY 
+            CASE status
+                WHEN 'new' THEN 1
+                WHEN 'in_progress' THEN 2
+                WHEN 'closed' THEN 3
+            END,
+            created_at DESC
+        LIMIT ? OFFSET ?
+    ''', (limit, offset)).fetchall()
     conn.close()
     orders_list = []
     for order in orders:
@@ -550,6 +575,7 @@ def get_reviews():
             'timestamp': review['created_at']
         })
     return jsonify({'reviews': reviews_list, 'total': total, 'page': page, 'limit': limit})
+
 @app.route('/api/remove-review/<int:review_id>', methods=['POST'])
 def remove_review(review_id):
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
@@ -566,6 +592,7 @@ def remove_review(review_id):
     conn.commit()
     conn.close()
     return jsonify({'message': 'Отзыв успешно удален'})
+
 @app.route('/logout')
 def logout():
     return jsonify({'message': 'Logged out'})
