@@ -764,11 +764,24 @@
                 });
                 // ===========================================
 
+                // ===========================================
+                // ===== ИСПРАВЛЕННЫЙ БЛОК ДЛЯ ПОД-ВКЛАДОК =====
+                // ===========================================
                 const subTabButtons = document.querySelectorAll('.admin-sub-tab-button');
                 subTabButtons.forEach(button => {
                     button.addEventListener('click', () => {
                         // Найти родительский контейнер, чтобы сбрасывать только "соседние" вкладки
+<<<<<<< HEAD
+
+                        // ===== ИСПРАВЛЕНИЕ ЗДЕСЬ =====
                         const parentContainer = button.closest('[data-tab-content]');
+                        // ===========================
+
+                        if (!parentContainer) return; // Добавим проверку на всякий случай
+
+=======
+                        const parentContainer = button.closest('[data-tab-content]');
+>>>>>>> 27eb9df2e4faa54b7fef9f16d58779d30a512cd8
                         const siblingSubTabs = parentContainer.querySelectorAll('.admin-sub-tab-button');
                         const siblingSubContents = parentContainer.querySelectorAll('[data-sub-tab-content]');
 
@@ -777,7 +790,10 @@
 
                         siblingSubContents.forEach(content => content.classList.add('hidden'));
                         const targetSubContent = document.getElementById(`${button.dataset.subTab}-sub-content`);
-                        targetSubContent.classList.remove('hidden');
+
+                        if (targetSubContent) { // Тоже добавим проверку
+                            targetSubContent.classList.remove('hidden');
+                        }
 
                         if (button.dataset.subTab === 'remove-dish') loadDishes();
                         if (button.dataset.subTab === 'incoming-orders') loadIncomingOrders(incomingOrdersCurrentPage, incomingOrdersLimit);
@@ -790,6 +806,10 @@
                         // ================
                     });
                 });
+                // ===========================================
+                // ===== КОНЕЦ ИСПРАВЛЕННОГО БЛОКА =========
+                // ===========================================
+
                 addDishForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     const formData = new FormData(addDishForm);
