@@ -98,7 +98,7 @@
             <div class="space-y-3 mb-6">
                 <div class="flex justify-between items-center text-lg md:text-xl tracking-tight">
                     <p class="text-[#3b443d]">Подытог товаров:</p>
-                    <p id="subtotal" class="font-bold text-[#3b443d]">0 ₽</p>
+                    <p id="subtotal" class="font-bold text-[#3b443d]">0 сўм</p>
                 </div>
                 <div class="flex justify-between items-center text-lg md:text-xl tracking-tight">
                     <p class="text-[#3b443d]">Номер столика:</p>
@@ -108,12 +108,12 @@
             <div class="pt-4 border-t-2 border-dashed border-gray-300">
                 <div class="flex justify-between items-center">
                     <p class="text-xl md:text-2xl font-bold tracking-tight text-[#3b443d]">Итого к оплате:</p>
-                    <p id="total" class="text-2xl md:text-3xl font-bold text-[#597e52]">0 ₽</p>
+                    <p id="total" class="text-2xl md:text-3xl font-bold text-[#597e52]">0 сўм</p>
                 </div>
             </div>
             <button id="checkout-button" class="checkout-button mt-8">Перейти к оформлению</button>
             <div class="text-center mt-4">
-                <a href="index.html?modal=ordered" class="navelement !border-none !p-0">← Продолжить покупки</a>
+                <a href="index.html" class="navelement !border-none !p-0">← Продолжить покупки</a>
             </div>
         </div>
     </div>
@@ -246,7 +246,7 @@
             info.appendChild(desc);
             const price = document.createElement('p');
             price.className = 'cart-item-price';
-            price.textContent = `${item.price} ₽`;
+            price.textContent = `${item.price} сўм`;
             info.appendChild(price);
             topSection.appendChild(info);
             div.appendChild(topSection);
@@ -273,7 +273,7 @@
             rightSection.className = 'flex items-center gap-3';
             const totalPrice = document.createElement('p');
             totalPrice.className = 'cart-item-price-total';
-            totalPrice.textContent = `${item.price * item.quantity} ₽`;
+            totalPrice.textContent = `${item.price * item.quantity} сўм`;
             rightSection.appendChild(totalPrice);
             const removeBtn = document.createElement('button');
             removeBtn.className = 'text-red-500 hover:text-red-700 transition duration-150';
@@ -321,8 +321,8 @@
         function updateTotals() {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-            document.getElementById('subtotal').textContent = `${subtotal} ₽`;
-            document.getElementById('total').textContent = `${subtotal} ₽`;
+            document.getElementById('subtotal').textContent = `${subtotal} сўм`;
+            document.getElementById('total').textContent = `${subtotal} сўм`;
             document.getElementById('checkout-button').disabled = cart.length === 0;
         }
         function openPaymentModal() {
@@ -379,7 +379,7 @@
                 cart: JSON.parse(localStorage.getItem('cart')) || []
             };
             try {
-                const response = await fetch('http://127.0.0.1:3000/api/create-order', {
+                const response = await fetch('/back/api/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -422,7 +422,7 @@
             if (value.length > 7) formatted += `-${value.slice(7, 9)}`;
 
             e.target.value = formatted;
-        }); 
+        });
         loadCart();
     }
 </script>
