@@ -85,6 +85,8 @@
             const locationLinkMessage = document.getElementById('location-link-message');
             const locationLinkOutput = document.getElementById('location-link-output');
             const token = localStorage.getItem('token');
+            let incomingOrdersCurrentPage = 1;
+            let incomingOrdersLimit = 10;
             let activeOrdersCurrentPage = 1;
             let activeOrdersLimit = 10;
             let completedOrdersCurrentPage = 1;
@@ -145,7 +147,9 @@
                         const data = await response.json();
                         if (response.ok) {
                             const activeSubTab = document.querySelector('#orders-content .admin-sub-tab-button.active');
-                            if (activeSubTab.dataset.subTab === 'active-orders') {
+                            if (activeSubTab.dataset.subTab === 'incoming-orders') {
+                                loadIncomingOrders(incomingOrdersCurrentPage, incomingOrdersLimit);
+                            } else if (activeSubTab.dataset.subTab === 'active-orders') {
                                 loadActiveOrders(activeOrdersCurrentPage, activeOrdersLimit);
                             } else {
                                 loadCompletedOrders(completedOrdersCurrentPage, completedOrdersLimit);
@@ -167,7 +171,9 @@
                         const data = await response.json();
                         if (response.ok) {
                             const activeSubTab = document.querySelector('#orders-content .admin-sub-tab-button.active');
-                            if (activeSubTab.dataset.subTab === 'active-orders') {
+                            if (activeSubTab.dataset.subTab === 'incoming-orders') {
+                                loadIncomingOrders(incomingOrdersCurrentPage, incomingOrdersLimit);
+                            } else if (activeSubTab.dataset.subTab === 'active-orders') {
                                 loadActiveOrders(activeOrdersCurrentPage, activeOrdersLimit);
                             } else {
                                 loadCompletedOrders(completedOrdersCurrentPage, completedOrdersLimit);
@@ -190,7 +196,9 @@
                         const data = await response.json();
                         if (response.ok) {
                             const activeSubTab = document.querySelector('#orders-content .admin-sub-tab-button.active');
-                            if (activeSubTab.dataset.subTab === 'active-orders') {
+                            if (activeSubTab.dataset.subTab === 'incoming-orders') {
+                                loadIncomingOrders(incomingOrdersCurrentPage, incomingOrdersLimit);
+                            } else if (activeSubTab.dataset.subTab === 'active-orders') {
                                 loadActiveOrders(activeOrdersCurrentPage, activeOrdersLimit);
                             } else {
                                 loadCompletedOrders(completedOrdersCurrentPage, completedOrdersLimit);
@@ -216,7 +224,9 @@
                         const data = await response.json();
                         if (response.ok) {
                             const activeSubTab = document.querySelector('#orders-content .admin-sub-tab-button.active');
-                            if (activeSubTab.dataset.subTab === 'active-orders') {
+                            if (activeSubTab.dataset.subTab === 'incoming-orders') {
+                                loadIncomingOrders(incomingOrdersCurrentPage, incomingOrdersLimit);
+                            } else if (activeSubTab.dataset.subTab === 'active-orders') {
                                 loadActiveOrders(activeOrdersCurrentPage, activeOrdersLimit);
                             } else {
                                 loadCompletedOrders(completedOrdersCurrentPage, completedOrdersLimit);
@@ -288,28 +298,26 @@
                         removeSelect.appendChild(optRem);
                     });
                 }
-                async function loadActiveOrders(page = 1, limit = 10) {
-                    activeOrdersCurrentPage = page;
-                    activeOrdersLimit = limit;
+                async function loadIncomingOrders(page = 1, limit = 10) {
+                    incomingOrdersCurrentPage = page;
+                    incomingOrdersLimit = limit;
                     try {
-                        const response = await fetch(`/back/api/orders?page=${page}&limit=${limit}&status=new,in_progress`, {
+                        const response = await fetch(`/back/api/orders?page=${page}&limit=${limit}&status=new`, {
                             headers: { 'Authorization': `Bearer ${token}` }
                         });
                         const data = await response.json();
-                        const ordersContainer = document.getElementById('active-orders-list');
+                        const ordersContainer = document.getElementById('incoming-orders-list');
                         ordersContainer.innerHTML = '';
                         const groupedOrders = {
-                            'new': [],
-                            'in_progress': []
+                            'new': []
                         };
                         data.orders.forEach(order => {
-                            if (order.status === 'new' || order.status === 'in_progress') {
-                                groupedOrders[order.status].push(order);
+                            if (order.status === 'new') {
+                                groupedOrders['new'].push(order);
                             }
                         });
                         const statusTitles = {
-                            'new': 'Новые Заказы',
-                            'in_progress': 'Заказы в Процессе'
+                            'new': 'Поступающие Заказы'
                         };
                         const statusColors = {
                             'new': 'text-green-600',
@@ -323,7 +331,7 @@
                             'closed': 'Закрыт',
                             'cancelled': 'Отменен'
                         };
-                        ['new', 'in_progress'].forEach(status => {
+                        ['new'].forEach(status => {
                             if (groupedOrders[status].length > 0) {
                                 const header = document.createElement('h3');
                                 header.className = 'text-xl sm:text-2xl font-bold mt-6 sm:mt-8 mb-3 sm:mb-4 text-[#597e52]';
@@ -355,9 +363,120 @@
                                             <p class="mb-2 mt-2">Статус заказа: <span class="${statusColors[order.status] || 'text-gray-600'} font-medium">${statusLabels[order.status] || order.status}</span></p>
                                             <div class="mt-4 space-x-2">
                                                 <div class="flex flex-wrap gap-2">
-                                                    ${order.status === 'new' ? `<button class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700 text-sm" onclick="window.takeOrder(${order.id})">Взять заказ</button>` : ''}
-                                                    ${order.status !== 'closed' && order.status !== 'cancelled' ? `<button class="bg-green-500 text-white p-2 rounded-md hover:bg-green-700 text-sm" onclick="window.completeOrder(${order.id})">Завершить заказ</button>` : ''}
-                                                    ${order.status !== 'closed' && order.status !== 'cancelled' ? `<button class="bg-red-500 text-white p-2 rounded-md hover:bg-red-700 text-sm" onclick="window.cancelOrder(${order.id})">Отменить заказ</button>` : ''}
+                                                    ${order.status === 'new' ? `<button class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700 text-sm" onclick="window.takeOrder(${order.id})">Принять заказ</button>` : ''}
+                                                    ${order.status === 'in_progress' ? `<button class="bg-green-500 text-white p-2 rounded-md hover:bg-green-700 text-sm" onclick="window.completeOrder(${order.id})">Завершить заказ</button>` : ''}
+                                                    ${order.status === 'new' || order.status === 'in_progress' ? `<button class="bg-red-500 text-white p-2 rounded-md hover:bg-red-700 text-sm" onclick="window.cancelOrder(${order.id})">Отменить заказ</button>` : ''}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-span-1 lg:col-span-2">
+                                            <p class="font-semibold mb-1 text-base sm:text-lg">Состав заказа:</p>
+                                            <ul class="list-disc list-inside ml-2 text-xs sm:text-sm text-gray-800 space-y-0.5">
+                                                ${order.items.map(item => `<li>${item.name} x ${item.quantity} - ${item.price * item.quantity} сум</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    `;
+                                    ordersContainer.appendChild(orderDiv);
+                                    const select = orderDiv.querySelector('.payment-status-select');
+                                    const commentInput = orderDiv.querySelector('.payment-comment');
+                                    select.addEventListener('change', async () => {
+                                        const paymentStatus = select.value;
+                                        let paymentComment = '';
+                                        if (paymentStatus === 'Оплата при выезде') {
+                                            if (!commentInput) {
+                                                const input = document.createElement('input');
+                                                input.type = 'text';
+                                                input.className = 'admin-input mt-2 payment-comment text-sm';
+                                                input.placeholder = 'ФИО для оплаты при выезде';
+                                                select.parentElement.appendChild(input);
+                                                input.addEventListener('change', () => updatePaymentStatus(order.id, paymentStatus, input.value));
+                                                return;
+                                            }
+                                            paymentComment = commentInput.value;
+                                        } else if (commentInput) {
+                                            commentInput.remove();
+                                        }
+                                        await updatePaymentStatus(order.id, paymentStatus, paymentComment);
+                                    });
+                                    if (commentInput) {
+                                        commentInput.addEventListener('change', () => updatePaymentStatus(order.id, select.value, commentInput.value));
+                                    }
+                                });
+                            }
+                        });
+                        renderPagination('incoming-orders-pagination', data.total, data.page, data.limit, loadIncomingOrders);
+                    } catch (error) {
+                        console.error('Error loading incoming orders:', error);
+                    }
+                }
+                async function loadActiveOrders(page = 1, limit = 10) {
+                    activeOrdersCurrentPage = page;
+                    activeOrdersLimit = limit;
+                    try {
+                        const response = await fetch(`/back/api/orders?page=${page}&limit=${limit}&status=in_progress`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        const ordersContainer = document.getElementById('active-orders-list');
+                        ordersContainer.innerHTML = '';
+                        const groupedOrders = {
+                            'in_progress': []
+                        };
+                        data.orders.forEach(order => {
+                            if (order.status === 'in_progress') {
+                                groupedOrders['in_progress'].push(order);
+                            }
+                        });
+                        const statusTitles = {
+                            'in_progress': 'Активные Заказы'
+                        };
+                        const statusColors = {
+                            'new': 'text-green-600',
+                            'in_progress': 'text-yellow-600',
+                            'closed': 'text-red-600',
+                            'cancelled': 'text-red-600'
+                        };
+                        const statusLabels = {
+                            'new': 'Новый',
+                            'in_progress': 'В процессе',
+                            'closed': 'Закрыт',
+                            'cancelled': 'Отменен'
+                        };
+                        ['in_progress'].forEach(status => {
+                            if (groupedOrders[status].length > 0) {
+                                const header = document.createElement('h3');
+                                header.className = 'text-xl sm:text-2xl font-bold mt-6 sm:mt-8 mb-3 sm:mb-4 text-[#597e52]';
+                                header.textContent = statusTitles[status];
+                                ordersContainer.appendChild(header);
+                                groupedOrders[status].forEach(order => {
+                                    const orderDiv = document.createElement('div');
+                                    orderDiv.className = 'p-3 sm:p-4 border rounded-md bg-gray-50 shadow-sm mb-4 grid grid-cols-1 lg:grid-cols-3 gap-4';
+                                    orderDiv.innerHTML = `
+                                        <div class="col-span-1 text-sm sm:text-base">
+                                            <p class="font-bold text-base sm:text-lg mb-1">Заказ #${order.id}</p>
+                                            <p>Столик: ${order.table_number}</p>
+                                            <p>Время заказа: ${new Date(order.timestamp).toLocaleString('ru-RU')}</p>
+                                            <p>Имя: ${order.user_name}</p>
+                                            <p>Номер телефона: ${order.phone}</p>
+                                            <p>Метод оплаты: ${order.payment_method === 'cash' ? 'Наличные/Карта' : order.payment_method.charAt(0).toUpperCase() + order.payment_method.slice(1)}</p>
+                                            <p>Статус оплаты: <span class="${order.payment_status === 'Оплачен' ? 'text-green-600' : order.payment_status === 'Оплата при выезде' ? 'text-blue-600' : 'text-red-600'} font-medium">${order.payment_status}</span></p>
+                                            ${order.payment_status === 'Оплата при выезде' && order.payment_comment ? `<p>Комментарий: ${order.payment_comment}</p>` : ''}
+                                            <div class="mt-2">
+                                                <select class="payment-status-select" data-order-id="${order.id}">
+                                                    <option value="Оплачен" ${order.payment_status === 'Оплачен' ? 'selected' : ''}>Оплачен</option>
+                                                    <option value="Не оплачен" ${order.payment_status === 'Не оплачен' ? 'selected' : ''}>Не оплачен</option>
+                                                    <option value="Оплата при выезде" ${order.payment_status === 'Оплата при выезде' ? 'selected' : ''}>Оплата при выезде</option>
+                                                </select>
+                                                ${order.payment_status === 'Оплата при выезде' ? `
+                                                    <input type="text" class="admin-input mt-2 payment-comment text-sm" placeholder="ФИО для оплаты при выезде" value="${order.payment_comment || ''}">
+                                                ` : ''}
+                                            </div>
+                                            <p class="mb-2 mt-2">Статус заказа: <span class="${statusColors[order.status] || 'text-gray-600'} font-medium">${statusLabels[order.status] || order.status}</span></p>
+                                            <div class="mt-4 space-x-2">
+                                                <div class="flex flex-wrap gap-2">
+                                                    ${order.status === 'new' ? `<button class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700 text-sm" onclick="window.takeOrder(${order.id})">Принять заказ</button>` : ''}
+                                                    ${order.status === 'in_progress' ? `<button class="bg-green-500 text-white p-2 rounded-md hover:bg-green-700 text-sm" onclick="window.completeOrder(${order.id})">Завершить заказ</button>` : ''}
+                                                    ${order.status === 'new' || order.status === 'in_progress' ? `<button class="bg-red-500 text-white p-2 rounded-md hover:bg-red-700 text-sm" onclick="window.cancelOrder(${order.id})">Отменить заказ</button>` : ''}
                                                 </div>
                                             </div>
                                         </div>
@@ -468,9 +587,9 @@
                                             <p class="mb-2 mt-2">Статус заказа: <span class="${statusColors[order.status] || 'text-gray-600'} font-medium">${statusLabels[order.status] || order.status}</span></p>
                                             <div class="mt-4 space-x-2">
                                                 <div class="flex flex-wrap gap-2">
-                                                    ${order.status === 'new' ? `<button class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700 text-sm" onclick="window.takeOrder(${order.id})">Взять заказ</button>` : ''}
-                                                    ${order.status !== 'closed' && order.status !== 'cancelled' ? `<button class="bg-green-500 text-white p-2 rounded-md hover:bg-green-700 text-sm" onclick="window.completeOrder(${order.id})">Завершить заказ</button>` : ''}
-                                                    ${order.status !== 'closed' && order.status !== 'cancelled' ? `<button class="bg-red-500 text-white p-2 rounded-md hover:bg-red-700 text-sm" onclick="window.cancelOrder(${order.id})">Отменить заказ</button>` : ''}
+                                                    ${order.status === 'new' ? `<button class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700 text-sm" onclick="window.takeOrder(${order.id})">Принять заказ</button>` : ''}
+                                                    ${order.status === 'in_progress' ? `<button class="bg-green-500 text-white p-2 rounded-md hover:bg-green-700 text-sm" onclick="window.completeOrder(${order.id})">Завершить заказ</button>` : ''}
+                                                    ${order.status === 'new' || order.status === 'in_progress' ? `<button class="bg-red-500 text-white p-2 rounded-md hover:bg-red-700 text-sm" onclick="window.cancelOrder(${order.id})">Отменить заказ</button>` : ''}
                                                 </div>
                                             </div>
                                         </div>
@@ -624,7 +743,9 @@
                         // 4. Загрузить данные для активной главной вкладки
                         if (button.dataset.tab === 'orders') {
                             const firstSubTab = targetContent.querySelector('.admin-sub-tab-button.active');
-                            if (firstSubTab.dataset.subTab === 'active-orders') {
+                            if (firstSubTab.dataset.subTab === 'incoming-orders') {
+                                loadIncomingOrders(incomingOrdersCurrentPage, incomingOrdersLimit);
+                            } else if (firstSubTab.dataset.subTab === 'active-orders') {
                                 loadActiveOrders(activeOrdersCurrentPage, activeOrdersLimit);
                             } else {
                                 loadCompletedOrders(completedOrdersCurrentPage, completedOrdersLimit);
@@ -659,8 +780,14 @@
                         targetSubContent.classList.remove('hidden');
 
                         if (button.dataset.subTab === 'remove-dish') loadDishes();
+                        if (button.dataset.subTab === 'incoming-orders') loadIncomingOrders(incomingOrdersCurrentPage, incomingOrdersLimit);
                         if (button.dataset.subTab === 'active-orders') loadActiveOrders(activeOrdersCurrentPage, activeOrdersLimit);
                         if (button.dataset.subTab === 'completed-orders') loadCompletedOrders(completedOrdersCurrentPage, completedOrdersLimit);
+                        // === НОВЫЙ КОД ===
+                        if (button.dataset.subTab === 'review-qr') {
+                            generateReviewQRCode();
+                        }
+                        // ================
                     });
                 });
                 addDishForm.addEventListener('submit', async (e) => {
@@ -800,6 +927,49 @@
                     };
                 }
 
+                // === НОВАЯ ФУНКЦИЯ ДЛЯ QR-КОДА ОТЗЫВОВ ===
+                async function generateReviewQRCode() {
+                    const url = 'reviews.html'; // URL для страницы отзывов
+                    const qrParent = document.querySelector('.qr-code-parent-reviews');
+                    const qrImage = document.querySelector('.qr-code-reviews');
+                    const downloadBtn = document.getElementById('download-qr-reviews');
+
+                    // Проверяем, был ли QR уже сгенерирован
+                    if (qrImage.src && qrImage.src.length > 0) {
+                        qrParent.classList.remove('hidden');
+                        return;
+                    }
+
+                    // Генерируем URL для QR-кода
+                    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+
+                    // Устанавливаем изображение QR-кода
+                    qrImage.src = qrApiUrl;
+
+                    // Показываем контейнер с QR-кодом
+                    qrParent.classList.remove('hidden');
+
+                    // Обработчик для скачивания QR-кода
+                    downloadBtn.onclick = async function() {
+                        try {
+                            const response = await fetch(qrApiUrl);
+                            const blob = await response.blob();
+                            const downloadUrl = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = downloadUrl;
+                            a.download = `qr-code-reviews.png`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            window.URL.revokeObjectURL(downloadUrl);
+                        } catch (error) {
+                            console.error('Error downloading QR code:', error);
+                            alert('Ошибка при скачивании QR-кода');
+                        }
+                    };
+                }
+                // ===========================================
+
 // Использование в обработчике формы:
                 locationLinkForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
@@ -852,11 +1022,18 @@
         <section id="orders-content" data-tab-content class="space-y-4 sm:space-y-6">
             <h2 class="admin-content-title">Все Заказы</h2>
             <div class="admin-sub-tabs flex space-x-4 sm:space-x-6 border-b pb-2 mb-4">
-                <button data-sub-tab="active-orders" class="admin-sub-tab-button active">Активные Заказы</button>
+                <button data-sub-tab="incoming-orders" class="admin-sub-tab-button active">Поступающие Заказы</button>
+                <button data-sub-tab="active-orders" class="admin-sub-tab-button">Активные Заказы</button>
                 <button data-sub-tab="completed-orders" class="admin-sub-tab-button">Завершенные Заказы</button>
             </div>
             <div class="sub-content-container">
-                <div id="active-orders-sub-content" data-sub-tab-content class="space-y-4 sm:space-y-6">
+                <div id="incoming-orders-sub-content" data-sub-tab-content class="space-y-4 sm:space-y-6">
+                    <div class="admin-card space-y-4">
+                        <div id="incoming-orders-list" class="space-y-4"></div>
+                        <div id="incoming-orders-pagination" class="flex justify-center mt-4"></div>
+                    </div>
+                </div>
+                <div id="active-orders-sub-content" data-sub-tab-content class="space-y-4 sm:space-y-6 hidden">
                     <div class="admin-card space-y-4">
                         <div id="active-orders-list" class="space-y-4"></div>
                         <div id="active-orders-pagination" class="flex justify-center mt-4"></div>
@@ -962,6 +1139,7 @@
             <h2 class="admin-content-title">Генерация Ссылок</h2>
             <div class="admin-sub-tabs flex space-x-4 sm:space-x-6 border-b pb-2 mb-4">
                 <button data-sub-tab="menu-link" class="admin-sub-tab-button active">Ссылка на меню</button>
+                <button data-sub-tab="review-qr" class="admin-sub-tab-button">QR на Отзывы</button>
             </div>
             <div class="sub-content-container">
                 <div id="menu-link-sub-content" data-sub-tab-content class="space-y-4 sm:space-y-6">
@@ -1018,6 +1196,15 @@
                             <button type="submit" class="admin-submit-button w-full">Сгенерировать Ссылку</button>
                             <div id="location-link-message" class="message"></div>
                         </form>
+                    </div>
+                </div>
+                <div id="review-qr-sub-content" data-sub-tab-content class="space-y-4 sm:space-y-6 hidden">
+                    <div class="admin-card space-y-4">
+                        <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-3 sm:mb-4">QR-код для страницы Отзывов</h3>
+                        <div class="qr-code-parent-reviews flex flex-col sm:flex-row items-center hidden">
+                            <img class="qr-code-reviews h-32 sm:h-40" src="" alt="qr-code-reviews">
+                            <button type="button" id="download-qr-reviews" class="max-w-xs sm:max-w-40 m-4 sm:mt-16 p-2 rounded-md w-full h-10 border bg-[#597e52] text-white">Скачать</button>
+                        </div>
                     </div>
                 </div>
             </div>

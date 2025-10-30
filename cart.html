@@ -1,4 +1,3 @@
-<!-- cart.html (no changes needed, already has localStorage.setItem('phoneNumber', phone)) -->
 <!doctype html>
 <html lang="ru" class="scroll-smooth">
 <head>
@@ -97,8 +96,12 @@
             <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-6 border-b pb-3">Итоги Заказа</h2>
             <div class="space-y-3 mb-6">
                 <div class="flex justify-between items-center text-lg md:text-xl tracking-tight">
-                    <p class="text-[#3b443d]">Подытог товаров:</p>
+                    <p class="text-[#3b443d]">Товары в заказе:</p>
                     <p id="subtotal" class="font-bold text-[#3b443d]">0 сўм</p>
+                </div>
+                <div class="flex justify-between items-center text-lg md:text-xl tracking-tight">
+                    <p class="text-[#3b443d]">Обслуживание (15%):</p>
+                    <p id="service-fee" class="font-bold text-[#3b443d]">0 сўм</p>
                 </div>
                 <div class="flex justify-between items-center text-lg md:text-xl tracking-tight">
                     <p class="text-[#3b443d]">Номер столика:</p>
@@ -113,7 +116,7 @@
             </div>
             <button id="checkout-button" class="checkout-button mt-8">Перейти к оформлению</button>
             <div class="text-center mt-4">
-                <a href="index.html" class="navelement !border-none !p-0">← Продолжить покупки</a>
+                <a href="index.html" class="navelement !border-none !p-0">← Добавить еще</a>
             </div>
         </div>
     </div>
@@ -318,11 +321,21 @@
             localStorage.setItem('cart', JSON.stringify(cart));
             loadCart();
         }
+        // Обновленная функция для расчета и отображения общей суммы с обслуживанием
         function updateTotals() {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+            // Расчет сбора за обслуживание (15%)
+            const SERVICE_FEE_RATE = 0.15;
+            const serviceFee = Math.round(subtotal * SERVICE_FEE_RATE); // Округляем до целого числа
+
+            // Расчет общей суммы
+            const total = subtotal + serviceFee;
+
             document.getElementById('subtotal').textContent = `${subtotal} сўм`;
-            document.getElementById('total').textContent = `${subtotal} сўм`;
+            document.getElementById('service-fee').textContent = `${serviceFee} сўм`; // Отображение сбора за обслуживание
+            document.getElementById('total').textContent = `${total} сўм`;
             document.getElementById('checkout-button').disabled = cart.length === 0;
         }
         function openPaymentModal() {
