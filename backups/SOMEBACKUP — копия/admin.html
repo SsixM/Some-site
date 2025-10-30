@@ -462,20 +462,11 @@
                 });
                 // ===========================================
 
-                // ===========================================
-                // ===== ИСПРАВЛЕННЫЙ БЛОК ДЛЯ ПОД-ВКЛАДОК =====
-                // ===========================================
                 const subTabButtons = document.querySelectorAll('.admin-sub-tab-button');
                 subTabButtons.forEach(button => {
                     button.addEventListener('click', () => {
                         // Найти родительский контейнер, чтобы сбрасывать только "соседние" вкладки
-
-                        // ===== ИСПРАВЛЕНИЕ ЗДЕСЬ =====
-                        const parentContainer = button.closest('[data-tab-content]');
-                        // ===========================
-
-                        if (!parentContainer) return; // Добавим проверку на всякий случай
-
+                        const parentContainer = button.closest('.sub-content-container').parentElement;
                         const siblingSubTabs = parentContainer.querySelectorAll('.admin-sub-tab-button');
                         const siblingSubContents = parentContainer.querySelectorAll('[data-sub-tab-content]');
 
@@ -484,18 +475,11 @@
 
                         siblingSubContents.forEach(content => content.classList.add('hidden'));
                         const targetSubContent = document.getElementById(`${button.dataset.subTab}-sub-content`);
-
-                        if (targetSubContent) { // Тоже добавим проверку
-                            targetSubContent.classList.remove('hidden');
-                        }
+                        targetSubContent.classList.remove('hidden');
 
                         if (button.dataset.subTab === 'remove-dish') loadDishes();
                     });
                 });
-                // ===========================================
-                // ===== КОНЕЦ ИСПРАВЛЕННОГО БЛОКА =========
-                // ===========================================
-
                 addDishForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     const formData = new FormData(addDishForm);

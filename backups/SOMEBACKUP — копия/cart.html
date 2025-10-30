@@ -1,0 +1,430 @@
+<!-- cart.html (no changes needed, already has localStorage.setItem('phoneNumber', phone)) -->
+<!doctype html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Корзина</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+        @layer components {
+            .menu-category-title {
+                @apply text-3xl md:text-4xl text-[#3b443d] font-bold tracking-tight text-center border-b-2 border-[#597e52]/40 mt-10 mb-6 pb-3;
+            }
+            .navelement {
+                @apply tracking-tight text-lg text-[#3b443d] hover:text-[#597e52] font-semibold px-4 py-2 rounded-lg transition duration-200 ease-in-out hover:bg-[#597e52]/10;
+            }
+            .cart-item-image {
+                @apply w-20 h-20 object-cover rounded-md flex-shrink-0 bg-gray-100;
+            }
+            .cart-item-name {
+                @apply text-lg md:text-xl font-bold tracking-tight text-[#3b443d];
+            }
+            .cart-item-price {
+                @apply text-base md:text-lg font-bold text-[#597e52];
+            }
+            .cart-item-price-total {
+                @apply text-xl md:text-2xl font-bold tracking-tight text-[#597e52];
+            }
+            .cart-quantity-button {
+                @apply w-9 h-9 text-xl leading-none flex items-center justify-center rounded-full text-[#597e52] transition duration-150 hover:bg-[#597e52] hover:text-white bg-white;
+            }
+            .checkout-button {
+                @apply w-full py-4 text-xl md:text-2xl font-bold rounded-lg bg-[#597e52] text-white transition-all duration-300 hover:scale-[1.01] hover:bg-[#4a6945] tracking-tight shadow-lg;
+            }
+            .admin-input {
+                @apply w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#597e52] focus:border-transparent;
+            }
+            .admin-submit-button {
+                @apply w-full py-3 mt-4 bg-[#597e52] text-white font-bold rounded-md hover:bg-[#4a6945] transition-all duration-300;
+            }
+            .success-message {
+                @apply text-green-600;
+            }
+            .error-message {
+                @apply text-red-600;
+            }
+            .payment-method-card {
+                @apply border-2 border-gray-300 rounded-lg p-4 cursor-pointer transition-all duration-300 hover:border-[#597e52] hover:shadow-lg hover:scale-[1.02];
+            }
+            .payment-method-card.selected {
+                @apply border-[#597e52] bg-[#597e52]/5 shadow-lg scale-[1.02];
+            }
+            .modal-overlay {
+                @apply fixed inset-0 bg-black flex items-center justify-center z-50 transition-all duration-300;
+            }
+            .modal-overlay.hidden {
+                @apply opacity-0 pointer-events-none;
+            }
+            .modal-overlay:not(.hidden) {
+                @apply opacity-100;
+            }
+            .modal-content {
+                @apply bg-white p-8 rounded-lg shadow-2xl w-full max-w-md mx-4 transition-all duration-300 transform;
+            }
+            .modal-overlay.hidden .modal-content {
+                @apply scale-90 opacity-0;
+            }
+            .modal-overlay:not(.hidden) .modal-content {
+                @apply scale-100 opacity-100;
+            }
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-[#f4eee1] text-[#3b443d] font-sans">
+<div class="container mx-auto p-4 sm:p-10 max-w-7xl">
+    <h1 class="text-4xl sm:text-5xl font-bold text-center mb-10 sm:mb-12 tracking-tight">Корзина</h1>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-10">
+        <div class="lg:col-span-2">
+            <h2 class="menu-category-title !text-left !mt-0 !mb-4 border-b-2">Товары</h2>
+            <div id="cart-items-list" class="space-y-6"></div>
+        </div>
+        <div class="lg:col-span-1 border border-gray-300 p-6 rounded-lg self-start lg:sticky lg:top-10 shadow-lg mt-8 lg:mt-0 bg-white">
+            <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-6 border-b pb-3">Итоги Заказа</h2>
+            <div class="space-y-3 mb-6">
+                <div class="flex justify-between items-center text-lg md:text-xl tracking-tight">
+                    <p class="text-[#3b443d]">Подытог товаров:</p>
+                    <p id="subtotal" class="font-bold text-[#3b443d]">0 ₽</p>
+                </div>
+                <div class="flex justify-between items-center text-lg md:text-xl tracking-tight">
+                    <p class="text-[#3b443d]">Номер столика:</p>
+                    <p id="table-number-display" class="font-bold text-[#3b443d]"></p>
+                </div>
+            </div>
+            <div class="pt-4 border-t-2 border-dashed border-gray-300">
+                <div class="flex justify-between items-center">
+                    <p class="text-xl md:text-2xl font-bold tracking-tight text-[#3b443d]">Итого к оплате:</p>
+                    <p id="total" class="text-2xl md:text-3xl font-bold text-[#597e52]">0 ₽</p>
+                </div>
+            </div>
+            <button id="checkout-button" class="checkout-button mt-8">Перейти к оформлению</button>
+            <div class="text-center mt-4">
+                <a href="index.html?modal=ordered" class="navelement !border-none !p-0">← Продолжить покупки</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="payment-modal" class="modal-overlay hidden" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-content">
+        <h2 class="text-2xl font-bold mb-6 text-center">Выберите способ оплаты</h2>
+        <div class="space-y-4">
+            <div class="payment-method-card" data-payment="cash">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-[#597e52]/10 rounded-full flex items-center justify-center transition-all duration-300">
+                        <svg class="w-6 h-6 text-[#597e52]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-bold text-lg">Наличные/Карта</p>
+                        <p class="text-sm text-gray-600">Оплата при получении</p>
+                    </div>
+                </div>
+            </div>
+            <div class="payment-method-card" data-payment="click">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-[#597e52]/10 rounded-full flex items-center justify-center transition-all duration-300">
+                        <svg class="w-6 h-6 text-[#597e52]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-bold text-lg">Click</p>
+                        <p class="text-sm text-gray-600">Онлайн оплата</p>
+                    </div>
+                </div>
+            </div>
+            <div class="payment-method-card" data-payment="payme">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-[#597e52]/10 rounded-full flex items-center justify-center transition-all duration-300">
+                        <svg class="w-6 h-6 text-[#597e52]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-bold text-lg">Payme</p>
+                        <p class="text-sm text-gray-600">Онлайн оплата</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button id="continue-to-checkout" class="admin-submit-button" disabled>Продолжить</button>
+        <button id="close-payment-modal" class="mt-4 w-full text-center text-red-500 hover:text-red-700 transition-colors duration-200">Отмена</button>
+    </div>
+</div>
+<div id="checkout-modal" class="modal-overlay hidden" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-content">
+        <h2 class="text-2xl font-bold mb-4">Оформление заказа</h2>
+        <form id="checkout-form">
+            <div class="mb-4">
+                <label for="user-name" class="block text-sm font-medium text-gray-700 mb-1">Имя</label>
+                <input type="text" id="user-name" name="user_name" class="admin-input" placeholder="Ваше имя" required>
+            </div>
+            <div class="mb-4">
+                <label for="user-phone" class="block text-sm font-medium text-gray-700 mb-1">Номер телефона</label>
+                <input type="tel" id="user-phone" name="phone" class="admin-input" placeholder="+998 (99) 999-99-99" maxlength="19" required>
+            </div>
+            <div class="mb-4">
+                <label for="table-number" class="block text-sm font-medium text-gray-700 mb-1">Номер столика</label>
+                <input type="text" id="table-number" name="table_number" class="admin-input" value="" disabled>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Способ оплаты</label>
+                <div class="px-4 py-3 bg-[#597e52]/10 rounded-md transition-all duration-300">
+                    <p id="selected-payment-display" class="font-semibold text-[#597e52]"></p>
+                </div>
+            </div>
+            <button type="submit" class="admin-submit-button">Подтвердить заказ</button>
+        </form>
+        <div id="checkout-message" class="message mt-4"></div>
+        <button id="close-modal" class="mt-4 text-red-500 hover:text-red-700 transition-colors duration-200">Закрыть</button>
+    </div>
+</div>
+<script>
+    function decodeJwt(token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.location;
+        } catch (e) {
+            return null;
+        }
+    }
+    function isTokenExpired(token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.exp < Math.floor(Date.now() / 1000);
+        } catch (e) {
+            return true;
+        }
+    }
+    const tableToken = localStorage.getItem('tableNumber');
+    let tableNumber = null;
+    if (tableToken && !isTokenExpired(tableToken)) {
+        tableNumber = decodeJwt(tableToken);
+    }
+    if (!tableNumber) {
+        localStorage.removeItem('tableNumber');
+        window.location.href = './redirect.html';
+    } else {
+        document.getElementById('table-number').value = tableNumber;
+        document.getElementById('table-number-display').textContent = tableNumber;
+        let selectedPaymentMethod = null;
+        function createCartItem(item) {
+            const div = document.createElement('div');
+            div.className = 'flex flex-col p-4 bg-white border border-gray-200 rounded-xl shadow-sm transition duration-150 hover:shadow-lg';
+            div.dataset.id = item.id;
+            const topSection = document.createElement('div');
+            topSection.className = 'flex items-start gap-4';
+            const img = document.createElement('img');
+            img.src = item.image || 'src/images/placeholder.jpg';
+            img.alt = item.name;
+            img.className = 'cart-item-image';
+            topSection.appendChild(img);
+            const info = document.createElement('div');
+            info.className = 'flex-grow min-w-0';
+            const name = document.createElement('p');
+            name.className = 'cart-item-name mb-1';
+            name.textContent = item.name;
+            info.appendChild(name);
+            const desc = document.createElement('p');
+            desc.className = 'text-[#3b443d]/70 text-sm leading-relaxed line-clamp-2 mb-2';
+            desc.textContent = item.description;
+            info.appendChild(desc);
+            const price = document.createElement('p');
+            price.className = 'cart-item-price';
+            price.textContent = `${item.price} ₽`;
+            info.appendChild(price);
+            topSection.appendChild(info);
+            div.appendChild(topSection);
+            const bottomSection = document.createElement('div');
+            bottomSection.className = 'flex items-center justify-between mt-4 pt-4 border-t border-gray-200';
+            const quantityDiv = document.createElement('div');
+            quantityDiv.className = 'flex items-center gap-3 bg-[#597e52]/10 rounded-full px-2 py-1';
+            const minus = document.createElement('button');
+            minus.className = 'cart-quantity-button';
+            minus.textContent = '-';
+            minus.onclick = () => updateQuantity(item.id, -1);
+            quantityDiv.appendChild(minus);
+            const qtySpan = document.createElement('span');
+            qtySpan.className = 'text-lg font-bold text-[#3b443d] min-w-[32px] text-center';
+            qtySpan.textContent = item.quantity;
+            quantityDiv.appendChild(qtySpan);
+            const plus = document.createElement('button');
+            plus.className = 'cart-quantity-button';
+            plus.textContent = '+';
+            plus.onclick = () => updateQuantity(item.id, 1);
+            quantityDiv.appendChild(plus);
+            bottomSection.appendChild(quantityDiv);
+            const rightSection = document.createElement('div');
+            rightSection.className = 'flex items-center gap-3';
+            const totalPrice = document.createElement('p');
+            totalPrice.className = 'cart-item-price-total';
+            totalPrice.textContent = `${item.price * item.quantity} ₽`;
+            rightSection.appendChild(totalPrice);
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'text-red-500 hover:text-red-700 transition duration-150';
+            removeBtn.onclick = () => removeItem(item.id);
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.className = 'h-6 w-6';
+            svg.setAttribute('fill', 'none');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('stroke', 'currentColor');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('stroke-linecap', 'round');
+            path.setAttribute('stroke-linejoin', 'round');
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+            svg.appendChild(path);
+            removeBtn.appendChild(svg);
+            rightSection.appendChild(removeBtn);
+            bottomSection.appendChild(rightSection);
+            div.appendChild(bottomSection);
+            return div;
+        }
+        function loadCart() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const list = document.getElementById('cart-items-list');
+            list.innerHTML = '';
+            cart.forEach(item => list.appendChild(createCartItem(item)));
+            updateTotals();
+        }
+        function updateQuantity(id, delta) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const itemIndex = cart.findIndex(i => i.id === id);
+            if (itemIndex !== -1) {
+                cart[itemIndex].quantity += delta;
+                if (cart[itemIndex].quantity <= 0) cart.splice(itemIndex, 1);
+                localStorage.setItem('cart', JSON.stringify(cart));
+                loadCart();
+            }
+        }
+        function removeItem(id) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart = cart.filter(i => i.id !== id);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            loadCart();
+        }
+        function updateTotals() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            document.getElementById('subtotal').textContent = `${subtotal} ₽`;
+            document.getElementById('total').textContent = `${subtotal} ₽`;
+            document.getElementById('checkout-button').disabled = cart.length === 0;
+        }
+        function openPaymentModal() {
+            document.getElementById('payment-modal').classList.remove('hidden');
+        }
+        function closePaymentModal() {
+            document.getElementById('payment-modal').classList.add('hidden');
+            selectedPaymentMethod = null;
+            document.getElementById('continue-to-checkout').disabled = true;
+            document.querySelectorAll('.payment-method-card').forEach(card => card.classList.remove('selected'));
+        }
+        function openCheckoutModal() {
+            document.getElementById('payment-modal').classList.add('hidden');
+            document.getElementById('checkout-modal').classList.remove('hidden');
+            document.getElementById('selected-payment-display').textContent = selectedPaymentMethod === 'cash' ? 'Наличные/Карта' : selectedPaymentMethod.charAt(0).toUpperCase() + selectedPaymentMethod.slice(1);
+        }
+        function closeCheckoutModal() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+            document.getElementById('checkout-message').textContent = '';
+            document.getElementById('checkout-form').reset();
+            document.getElementById('table-number').value = tableNumber;
+        }
+        function validatePhone(phone) {
+            const regex = /^\+998\s\(\d{2}\)\s\d{3}-\d{2}-\d{2}$/;
+            return regex.test(phone);
+        }
+        document.getElementById('checkout-button').addEventListener('click', openPaymentModal);
+        document.getElementById('close-payment-modal').addEventListener('click', closePaymentModal);
+        document.getElementById('close-modal').addEventListener('click', closeCheckoutModal);
+        document.querySelectorAll('.payment-method-card').forEach(card => {
+            card.addEventListener('click', () => {
+                selectedPaymentMethod = card.dataset.payment;
+                document.querySelectorAll('.payment-method-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                document.getElementById('continue-to-checkout').disabled = false;
+            });
+        });
+        document.getElementById('continue-to-checkout').addEventListener('click', openCheckoutModal);
+        document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const phone = formData.get('phone');
+            if (!validatePhone(phone)) {
+                document.getElementById('checkout-message').textContent = 'Неверный формат номера телефона. Используйте формат: +998 (XX) XXX-XX-XX';
+                document.getElementById('checkout-message').classList.add('error-message');
+                document.getElementById('checkout-message').classList.remove('success-message');
+                return;
+            }
+            const data = {
+                user_name: formData.get('user_name'),
+                phone: phone,
+                table_number: tableNumber,
+                payment_method: selectedPaymentMethod,
+                cart: JSON.parse(localStorage.getItem('cart')) || []
+            };
+            try {
+                const response = await fetch('http://127.0.0.1:3000/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                const checkoutMessage = document.getElementById('checkout-message');
+                if (response.ok) {
+                    localStorage.setItem('phoneNumber', phone);
+                    localStorage.removeItem('cart');
+                    window.location.href = './index.html?modal=ordered';
+                } else {
+                    checkoutMessage.textContent = result.error || 'Ошибка создания заказа';
+                    checkoutMessage.classList.add('error-message');
+                    checkoutMessage.classList.remove('success-message');
+                }
+            } catch (error) {
+                document.getElementById('checkout-message').textContent = 'Ошибка соединения с сервером';
+                document.getElementById('checkout-message').classList.add('error-message');
+                document.getElementById('checkout-message').classList.remove('success-message');
+            }
+        });
+        document.getElementById('user-phone').addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, ''); // Удаляем все нечисловые символы
+            if (value.length > 12) value = value.slice(0, 12); // Ограничиваем длину до 12 цифр (+998 и 9 цифр номера)
+
+            let formatted = '';
+            if (value.length === 0) {
+                e.target.value = ''; // Пустое поле, если ничего не введено
+                return;
+            }
+
+            // Добавляем префикс +998, если он еще не введен
+            formatted = '+998';
+            value = value.startsWith('998') ? value.slice(3) : value;
+
+            // Форматируем оставшуюся часть номера
+            if (value.length > 0) formatted += ` (${value.slice(0, 2)})`;
+            if (value.length > 2) formatted += ` ${value.slice(2, 5)}`;
+            if (value.length > 5) formatted += `-${value.slice(5, 7)}`;
+            if (value.length > 7) formatted += `-${value.slice(7, 9)}`;
+
+            e.target.value = formatted;
+        }); 
+        loadCart();
+    }
+</script>
+</body>
+</html>

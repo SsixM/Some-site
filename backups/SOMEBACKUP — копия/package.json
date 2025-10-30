@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.14",
+    "tailwind": "^2.3.1",
+    "tailwindcss": "^4.1.14"
+  },
+  "devDependencies": {
+    "tailwind-scrollbar": "^4.0.2"
+  }
+}
