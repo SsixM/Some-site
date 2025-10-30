@@ -12,7 +12,7 @@ import os
 
 app = Flask(__name__, static_folder='static')
 CORS(app, supports_credentials=True)
-SECRET_KEY = 'your-secret-key'
+SECRET_KEY = 'SECRET_125SJHDFASNX13BNDXSAD2F'
 
 # Initialize Flask-Limiter
 limiter = Limiter(
@@ -366,7 +366,7 @@ def generate_table_link():
     if not location:
         return jsonify({'error': 'Укажите локацию'}), 400
     table_token = jwt.encode({'location': location}, SECRET_KEY, algorithm='HS256')
-    link = f'file:///C:/Users/slava/Desktop/Defency/Some-site/redirect.html?lots={table_token}'
+    link = f'http://85.192.27.12/ranoeco/redirect.html?lots={table_token}'
     return jsonify({'link': link, 'table_number': location})
 
 @app.route('/api/verify-table', methods=['POST'])
@@ -606,4 +606,4 @@ def after_request(response):
 
 if __name__ == '__main__':
     migrate_db()
-    app.run(port=3000, debug=True)
+    app.run(port=5000, debug=True)

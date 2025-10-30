@@ -206,7 +206,7 @@
 
             const price = document.createElement('p');
             price.className = 'menu-category-card-parent-price';
-            price.textContent = `${item.price} ₽`;
+            price.textContent = `${item.price} сўм`;
             parent.appendChild(price);
 
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -352,7 +352,7 @@
                         </div>
                         <div class="text-sm text-[#3b443d]/80 font-medium mb-2 truncate">${item.name}</div>
                         <div class="flex items-center justify-between">
-                            <div class="text-base font-bold text-[#597e52]">${item.price} ₽</div>
+                            <div class="text-base font-bold text-[#597e52]">${item.price} сўм</div>
                             <button onclick="window.location.href='./cart.html'" class="py-1.5 px-3 bg-[#597e52] rounded-full flex items-center gap-1.5 text-white font-semibold text-xs hover:bg-[#4a6945] transition-colors">
                                 Корзина
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -381,7 +381,7 @@
 
         async function loadMenu() {
             try {
-                const response = await fetch('http://localhost:3000/api/menu');
+                const response = await fetch('/back/api/menu');
                 if (!response.ok) throw new Error('Ошибка загрузки меню');
                 const data = await response.json();
                 const categories = data.categories;
