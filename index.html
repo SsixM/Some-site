@@ -93,18 +93,60 @@
                 transform: translateY(-2px);
             }
 
-            /* --- ОБНОВЛЕННЫЙ СТИЛЬ СЧЕТЧИКА КОРЗИНЫ --- */
             #cart-count {
                 @apply scale-0 transition-transform duration-200;
-                /* Удаляем старые стили ширины/высоты и позиционирования */
             }
-            /* --- НОВЫЙ СТИЛЬ СЧЕТЧИКА КОРЗИНЫ --- */
+
             .cart-count-badge {
                 @apply absolute -top-2 -right-2 bg-red-500 text-xs text-white font-bold rounded-full flex items-center justify-center transition-transform duration-200;
                 min-width: 24px;
                 height: 24px;
-                padding: 0 6px; /* Добавляем горизонтальный отступ для больших чисел */
-                line-height: 1; /* Для вертикального центрирования */
+                padding: 0 6px;
+                line-height: 1;
+            }
+
+            #language-switcher {
+                @apply fixed top-2 left-6 z-50;
+            }
+
+            .lang-slider-container {
+                @apply relative bg-white rounded-full p-1 shadow-lg flex items-center;
+            }
+
+            .lang-slider-bg {
+                @apply absolute top-1 bottom-1 bg-[#597e52] rounded-full transition-all duration-300 ease-in-out;
+                left: 4px;
+                right: 50%;
+            }
+
+            .lang-slider-bg.uz {
+                left: 50%;
+                right: 4px;
+            }
+
+            .lang-option {
+                @apply relative z-10 px-3 py-2 cursor-pointer transition-all duration-300 rounded-full flex items-center justify-center;
+                width: 50%;
+            }
+
+            .lang-option img {
+                @apply w-6 h-6 object-cover rounded-sm;
+            }
+
+            .lang-option.active {
+                @apply text-white;
+            }
+
+            .lang-option:not(.active) {
+                @apply text-[#3b443d];
+            }
+
+            .lang-option svg {
+                @apply opacity-70 transition-opacity duration-300;
+            }
+
+            .lang-option.active svg {
+                @apply opacity-100;
             }
 
             @media (max-width: 640px) {
@@ -127,12 +169,59 @@
     </script>
 </head>
 <body class="bg-[#f4eee1] text-[#3b443d] font-sans">
+
+<div id="language-switcher">
+    <div class="lang-slider-container">
+        <div id="lang-slider-bg" class="lang-slider-bg"></div>
+        <div id="lang-ru" class="lang-option active" onclick="switchLanguage('ru')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" class="w-7 h-5">
+                <path fill="#fff" d="M0 0h640v160H0z"/>
+                <path fill="#0039a6" d="M0 160h640v160H0z"/>
+                <path fill="#d52b1e" d="M0 320h640v160H0z"/>
+            </svg>
+        </div>
+        <div id="lang-uz" class="lang-option" onclick="switchLanguage('uz')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" class="w-7 h-5">
+                <path fill="#1eb53a" d="M0 320h640v160H0z"/>
+                <path fill="#0099b5" d="M0 0h640v160H0z"/>
+                <path fill="#ce1126" d="M0 153.6h640v172.8H0z"/>
+                <path fill="#fff" d="M0 163.2h640v153.6H0z"/>
+                <circle cx="134.4" cy="76.8" r="57.6" fill="#fff"/>
+                <circle cx="153.6" cy="76.8" r="48" fill="#0099b5"/>
+                <g fill="#fff" transform="matrix(1.92 0 0 1.92 261.1 122.9)">
+                    <g id="e">
+                        <g id="d">
+                            <g id="c">
+                                <g id="b">
+                                    <path id="a" d="M0-6-1.9-.3 1 .7"/>
+                                    <use xlink:href="#a" width="100%" height="100%" transform="scale(-1 1)"/>
+                                </g>
+                                <use xlink:href="#b" width="100%" height="100%" transform="rotate(72)"/>
+                            </g>
+                            <use xlink:href="#b" width="100%" height="100%" transform="rotate(-72)"/>
+                            <use xlink:href="#c" width="100%" height="100%" transform="rotate(144)"/>
+                        </g>
+                        <use xlink:href="#d" width="100%" height="100%" y="-24"/>
+                        <use xlink:href="#d" width="100%" height="100%" y="-48"/>
+                    </g>
+                    <use xlink:href="#e" width="100%" height="100%" x="24"/>
+                    <use xlink:href="#e" width="100%" height="100%" x="48"/>
+                    <use xlink:href="#d" width="100%" height="100%" x="-24"/>
+                    <use xlink:href="#d" width="100%" height="100%" x="-48"/>
+                    <use xlink:href="#d" width="100%" height="100%" x="-24" y="-24"/>
+                    <use xlink:href="#d" width="100%" height="100%" x="-24" y="-48"/>
+                </g>
+            </svg>
+        </div>
+    </div>
+</div>
+
 <div class="container mx-auto p-4 sm:p-10 max-w-7xl">
-    <h1 class="text-4xl md:text-5xl font-bold text-center mb-10 tracking-tight">Меню</h1>
+    <h1 id="main-title" class="text-4xl md:text-5xl font-bold text-center mb-10 tracking-tight">Меню</h1>
 
     <div class="sticky top-0 z-10 bg-white shadow-md border-b border-gray-200">
         <div class="container mx-auto max-w-7xl px-4">
-            <nav class="flex w-full justify-start md:justify-center overflow-x-auto overflow-y-none space-x-2 py-3 pr-20 md:pr-0">
+            <nav class="flex w-full justify-start md:justify-center overflow-x-auto overflow-y-none space-x-2 py-3 pl-20 pr-20 md:pl-0 md:pr-0">
             </nav>
         </div>
     </div>
@@ -143,8 +232,8 @@
         <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
-        <h2 class="text-2xl font-bold mb-2">Заказ оформлен!</h2>
-        <p class="text-[#3b443d]/70 mb-6">Мы приняли ваш заказ. Ожидайте, скоро принесём!</p>
+        <h2 id="modal-title" class="text-2xl font-bold mb-2">Заказ оформлен!</h2>
+        <p id="modal-text" class="text-[#3b443d]/70 mb-6">Мы приняли ваш заказ. Ожидайте, скоро принесём!</p>
         <button id="close-order-modal" class="px-6 py-3 bg-[#597e52] text-white font-semibold rounded-lg hover:scale-105 transition">
             Окей
         </button>
@@ -165,6 +254,68 @@
 </div>
 
 <script>
+    const translations = {
+        ru: {
+            title: 'Меню',
+            addToCart: 'Добавить',
+            addedToCart: 'Добавлено в корзину!',
+            removedFromCart: 'Удалено из корзины!',
+            cart: 'Корзина',
+            orderPlaced: 'Заказ оформлен!',
+            orderText: 'Мы приняли ваш заказ. Ожидайте, скоро принесём!',
+            okay: 'Окей',
+            currency: 'сўм'
+        },
+        uz: {
+            title: 'Menyu',
+            addToCart: 'Qo\'shish',
+            addedToCart: 'Savatga qo\'shildi!',
+            removedFromCart: 'Savatdan o\'chirildi!',
+            cart: 'Savat',
+            orderPlaced: 'Buyurtma qabul qilindi!',
+            orderText: 'Biz sizning buyurtmangizni qabul qildik. Kutib turing!',
+            okay: 'Yaxshi',
+            currency: 'so\'m'
+        }
+    };
+
+    let currentLang = localStorage.getItem('language') || 'ru';
+
+    function switchLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('language', lang);
+
+        const sliderBg = document.getElementById('lang-slider-bg');
+        const ruOption = document.getElementById('lang-ru');
+        const uzOption = document.getElementById('lang-uz');
+
+        if (lang === 'uz') {
+            sliderBg.classList.add('uz');
+            ruOption.classList.remove('active');
+            uzOption.classList.add('active');
+        } else {
+            sliderBg.classList.remove('uz');
+            ruOption.classList.add('active');
+            uzOption.classList.remove('active');
+        }
+
+        updateUILanguage();
+    }
+
+    function updateUILanguage() {
+        const t = translations[currentLang];
+
+        document.getElementById('main-title').textContent = t.title;
+        document.getElementById('modal-title').textContent = t.orderPlaced;
+        document.getElementById('modal-text').textContent = t.orderText;
+        document.getElementById('close-order-modal').textContent = t.okay;
+
+        const addButtons = document.querySelectorAll('.add-to-cart-btn');
+        addButtons.forEach(btn => {
+            btn.textContent = t.addToCart;
+        });
+    }
+
     function isTokenExpired(token) {
         if (!token) return true;
         const parts = token.split('.');
@@ -216,7 +367,7 @@
 
             const price = document.createElement('p');
             price.className = 'menu-category-card-parent-price';
-            price.textContent = `${item.price} сўм`;
+            price.textContent = `${item.price} ${translations[currentLang].currency}`;
             parent.appendChild(price);
 
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -248,7 +399,7 @@
             } else {
                 const addBtn = document.createElement('button');
                 addBtn.className = 'add-to-cart-btn';
-                addBtn.textContent = 'Добавить';
+                addBtn.textContent = translations[currentLang].addToCart;
                 addBtn.onclick = () => updateCart(item, 1);
                 parent.appendChild(addBtn);
             }
@@ -316,7 +467,7 @@
                 } else {
                     const addBtn = document.createElement('button');
                     addBtn.className = 'add-to-cart-btn';
-                    addBtn.textContent = 'Добавить';
+                    addBtn.textContent = translations[currentLang].addToCart;
                     addBtn.onclick = () => updateCart(item, 1);
                     parent.appendChild(addBtn);
                 }
@@ -324,6 +475,7 @@
         }
 
         function showNotification(item, isRemoval = false) {
+            const t = translations[currentLang];
             const container = document.getElementById('notification-container');
             const notifications = container.children;
             const currentCount = notifications.length;
@@ -353,7 +505,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between mb-1">
-                            <span class="text-base font-semibold text-[#3b443d]">${isRemoval ? 'Удалено из корзины!' : 'Добавлено в корзину!'}</span>
+                            <span class="text-base font-semibold text-[#3b443d]">${isRemoval ? t.removedFromCart : t.addedToCart}</span>
                             <button onclick="hideNotification('${notificationId}')" class="flex-shrink-0 ml-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" height="14" width="14" viewBox="0 0 384 512" class="fill-[#3b443d]/30 hover:fill-[#3b443d] transition-colors">
                                     <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"></path>
@@ -362,9 +514,9 @@
                         </div>
                         <div class="text-sm text-[#3b443d]/80 font-medium mb-2 truncate">${item.name}</div>
                         <div class="flex items-center justify-between">
-                            <div class="text-base font-bold text-[#597e52]">${item.price} сўм</div>
+                            <div class="text-base font-bold text-[#597e52]">${item.price} ${t.currency}</div>
                             <button onclick="window.location.href='./cart.html'" class="py-1.5 px-3 bg-[#597e52] rounded-full flex items-center gap-1.5 text-white font-semibold text-xs hover:bg-[#4a6945] transition-colors">
-                                Корзина
+                                ${t.cart}
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                                     <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.28 10.28a.75.75 0 000-1.06l-3-3a.75.75 0 10-1.06 1.06l1.72 1.72H8.25a.75.75 0 000 1.5h5.69l-1.72 1.72a.75.75 0 101.06 1.06l3-3z" clip-rule="evenodd"></path>
                                 </svg>
@@ -376,7 +528,6 @@
 
             container.appendChild(notification);
             setTimeout(() => notification.classList.add('visible'), 100);
-            // setTimeout(() => hideNotification(notificationId), 3000);
         }
 
         function hideNotification(notificationId) {
@@ -457,6 +608,7 @@
         }
 
         async function init() {
+            switchLanguage(currentLang);
             await loadMenu();
             updateCartButton();
 

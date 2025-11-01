@@ -760,6 +760,7 @@
                         }
                         if (button.dataset.tab === 'reviews') loadReviews(reviewsCurrentPage, reviewsLimit);
                         // Для 'create-links' отдельная загрузка данных не нужна
+                        // Для 'tables' отдельная загрузка не нужна
                     });
                 });
                 // ===========================================
@@ -771,17 +772,9 @@
                 subTabButtons.forEach(button => {
                     button.addEventListener('click', () => {
                         // Найти родительский контейнер, чтобы сбрасывать только "соседние" вкладки
-<<<<<<< HEAD
-
-                        // ===== ИСПРАВЛЕНИЕ ЗДЕСЬ =====
                         const parentContainer = button.closest('[data-tab-content]');
-                        // ===========================
-
                         if (!parentContainer) return; // Добавим проверку на всякий случай
 
-=======
-                        const parentContainer = button.closest('[data-tab-content]');
->>>>>>> 27eb9df2e4faa54b7fef9f16d58779d30a512cd8
                         const siblingSubTabs = parentContainer.querySelectorAll('.admin-sub-tab-button');
                         const siblingSubContents = parentContainer.querySelectorAll('[data-sub-tab-content]');
 
@@ -949,7 +942,7 @@
 
                 // === НОВАЯ ФУНКЦИЯ ДЛЯ QR-КОДА ОТЗЫВОВ ===
                 async function generateReviewQRCode() {
-                    const url = 'reviews.html'; // URL для страницы отзывов
+                    const url = window.location.origin + '/reviews.html'; // Полный URL для правильной работы QR
                     const qrParent = document.querySelector('.qr-code-parent-reviews');
                     const qrImage = document.querySelector('.qr-code-reviews');
                     const downloadBtn = document.getElementById('download-qr-reviews');
@@ -1019,6 +1012,35 @@
                         locationLinkMessage.classList.add('error-message');
                     }
                 });
+
+                // Обработчик для новой формы столиков (пример, адаптируйте под сервер)
+                const addTableForm = document.getElementById('add-table-form');
+                const addTableMessage = document.getElementById('add-table-message');
+                if (addTableForm) {
+                    addTableForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(addTableForm);
+                        try {
+                            const response = await fetch('/back/api/add-table', { // Предполагаемый endpoint
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${token}` },
+                                body: formData
+                            });
+                            const data = await response.json();
+                            addTableMessage.textContent = data.message || data.error;
+                            addTableMessage.classList.add(response.ok ? 'success-message' : 'error-message');
+                            addTableMessage.classList.remove(response.ok ? 'error-message' : 'success-message');
+                            if (response.ok) {
+                                addTableForm.reset();
+                                // Если нужно, загрузить список столиков
+                            }
+                        } catch (error) {
+                            console.error('Error adding table:', error);
+                            addTableMessage.textContent = 'Ошибка соединения с сервером';
+                            addTableMessage.classList.add('error-message');
+                        }
+                    });
+                }
             })();
 
         }
@@ -1035,6 +1057,7 @@
                 <button data-tab="categories" class="admin-tab-button">Категории</button>
                 <button data-tab="create-links" class="admin-tab-button">Создание ссылок</button>
                 <button data-tab="reviews" class="admin-tab-button">Отзывы</button>
+                <button data-tab="tables" class="admin-tab-button">Столики</button>
             </nav>
         </div>
     </div>
@@ -1234,6 +1257,24 @@
             <div class="admin-card space-y-4">
                 <div id="reviews-list" class="space-y-4"></div>
                 <div id="reviews-pagination" class="flex justify-center mt-4"></div>
+            </div>
+        </section>
+        <section id="tables-content" data-tab-content class="space-y-4 sm:space-y-6 hidden">
+            <h2 class="admin-content-title">Управление Столиками</h2>
+            <div class="admin-card space-y-4">
+                <form id="add-table-form" class="space-y-4">
+                    <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-3 sm:mb-4">Добавление Столика</h3>
+                    <div>
+                        <label for="table-name" class="block text-sm font-medium text-gray-700 mb-1">Название Столика</label>
+                        <input type="text" id="table-name" name="name" class="admin-input" placeholder="Например, Столик 1" required>
+                    </div>
+                    <div>
+                        <label for="table-percentage" class="block text-sm font-medium text-gray-700 mb-1">Процент</label>
+                        <input type="number" id="table-percentage" name="percentage" class="admin-input" placeholder="Например, 10" min="0" max="100" required>
+                    </div>
+                    <button type="submit" class="admin-submit-button w-full">Сохранить Столик</button>
+                    <div id="add-table-message" class="message"></div>
+                </form>
             </div>
         </section>
     </div>
