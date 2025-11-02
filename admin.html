@@ -189,7 +189,7 @@
                 window.cancelOrder = async function(orderId) {
                     if (!confirm('Вы уверены, что хотите отменить этот заказ?')) return;
                     try {
-                        const response = await fetch(`/back/api/cancel-order/${orderId}`, {
+                        const response = await fetch(`/back/api/close-order/${orderId}`, {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}` }
                         });
@@ -277,27 +277,37 @@
                         console.error('Error loading dishes:', e);
                     }
                 }
-                async function loadCategories() {
-                    const token = localStorage.getItem('token');
-                    const response = await fetch('/back/api/categories', {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const data = await response.json();
-                    const addSelect = document.getElementById('dish-category');
-                    const removeSelect = document.getElementById('category-to-remove');
-                    addSelect.innerHTML = '<option value="" disabled selected>Выберите категорию...</option>';
-                    removeSelect.innerHTML = '<option value="" disabled selected>Выберите категорию...</option>';
-                    data.categories.forEach(cat => {
-                        const optAdd = document.createElement('option');
-                        optAdd.value = cat.value;
-                        optAdd.textContent = cat.name;
-                        addSelect.appendChild(optAdd);
-                        const optRem = document.createElement('option');
-                        optRem.value = cat.value;
-                        optRem.textContent = cat.name;
-                        removeSelect.appendChild(optRem);
-                    });
-                }
+async function loadCategories() {
+    const token = localStorage.getItem('token');
+    const response = await fetch('/back/api/categories', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+
+    const addSelect = document.getElementById('dish-category');
+    const removeSelect = document.getElementById('category-to-remove');
+
+    addSelect.innerHTML = '<option value="" disabled selected>Выберите категорию...</option>';
+    removeSelect.innerHTML = '<option value="" disabled selected>Выберите категорию...</option>';
+
+    // Определяем текущий язык (как в menu.html)
+    const currentLang = localStorage.getItem('language') || 'ru';
+
+    data.categories.forEach(cat => {
+        // Выбираем нужный текст: name_ru или name_uz
+        const displayName = currentLang === 'uz' ? cat.name_uz : cat.name_ru;
+
+        const optAdd = document.createElement('option');
+        optAdd.value = cat.value;
+        optAdd.textContent = displayName;
+        addSelect.appendChild(optAdd);
+
+        const optRem = document.createElement('option');
+        optRem.value = cat.value;
+        optRem.textContent = displayName;
+        removeSelect.appendChild(optRem);
+    });
+}
                 async function loadIncomingOrders(page = 1, limit = 10) {
                     incomingOrdersCurrentPage = page;
                     incomingOrdersLimit = limit;
@@ -308,17 +318,13 @@
                         const data = await response.json();
                         const ordersContainer = document.getElementById('incoming-orders-list');
                         ordersContainer.innerHTML = '';
-                        const groupedOrders = {
-                            'new': []
-                        };
+                        const groupedOrders = { 'new': [] };
                         data.orders.forEach(order => {
                             if (order.status === 'new') {
                                 groupedOrders['new'].push(order);
                             }
                         });
-                        const statusTitles = {
-                            'new': 'Поступающие Заказы'
-                        };
+                        const statusTitles = { 'new': 'Поступающие Заказы' };
                         const statusColors = {
                             'new': 'text-green-600',
                             'in_progress': 'text-yellow-600',
@@ -338,6 +344,9 @@
                                 header.textContent = statusTitles[status];
                                 ordersContainer.appendChild(header);
                                 groupedOrders[status].forEach(order => {
+                                    const pm = order.payment_method || '';
+                                    const paymentLabel = pm === 'cash' ? 'Наличные/Карта' : (pm ? pm.charAt(0).toUpperCase() + pm.slice(1) : '—');
+
                                     const orderDiv = document.createElement('div');
                                     orderDiv.className = 'p-3 sm:p-4 border rounded-md bg-gray-50 shadow-sm mb-4 grid grid-cols-1 lg:grid-cols-3 gap-4';
                                     orderDiv.innerHTML = `
@@ -347,7 +356,7 @@
                                             <p>Время заказа: ${new Date(order.timestamp).toLocaleString('ru-RU')}</p>
                                             <p>Имя: ${order.user_name}</p>
                                             <p>Номер телефона: ${order.phone}</p>
-                                            <p>Метод оплаты: ${order.payment_method === 'cash' ? 'Наличные/Карта' : order.payment_method.charAt(0).toUpperCase() + order.payment_method.slice(1)}</p>
+                                            <p>Метод оплаты: ${paymentLabel}</p>
                                             <p>Статус оплаты: <span class="${order.payment_status === 'Оплачен' ? 'text-green-600' : order.payment_status === 'Оплата при выезде' ? 'text-blue-600' : 'text-red-600'} font-medium">${order.payment_status}</span></p>
                                             ${order.payment_status === 'Оплата при выезде' && order.payment_comment ? `<p>Комментарий: ${order.payment_comment}</p>` : ''}
                                             <div class="mt-2">
@@ -377,6 +386,7 @@
                                         </div>
                                     `;
                                     ordersContainer.appendChild(orderDiv);
+
                                     const select = orderDiv.querySelector('.payment-status-select');
                                     const commentInput = orderDiv.querySelector('.payment-comment');
                                     select.addEventListener('change', async () => {
@@ -419,17 +429,13 @@
                         const data = await response.json();
                         const ordersContainer = document.getElementById('active-orders-list');
                         ordersContainer.innerHTML = '';
-                        const groupedOrders = {
-                            'in_progress': []
-                        };
+                        const groupedOrders = { 'in_progress': [] };
                         data.orders.forEach(order => {
                             if (order.status === 'in_progress') {
                                 groupedOrders['in_progress'].push(order);
                             }
                         });
-                        const statusTitles = {
-                            'in_progress': 'Активные Заказы'
-                        };
+                        const statusTitles = { 'in_progress': 'Активные Заказы' };
                         const statusColors = {
                             'new': 'text-green-600',
                             'in_progress': 'text-yellow-600',
@@ -449,6 +455,9 @@
                                 header.textContent = statusTitles[status];
                                 ordersContainer.appendChild(header);
                                 groupedOrders[status].forEach(order => {
+                                    const pm = order.payment_method || '';
+                                    const paymentLabel = pm === 'cash' ? 'Наличные/Карта' : (pm ? pm.charAt(0).toUpperCase() + pm.slice(1) : '—');
+
                                     const orderDiv = document.createElement('div');
                                     orderDiv.className = 'p-3 sm:p-4 border rounded-md bg-gray-50 shadow-sm mb-4 grid grid-cols-1 lg:grid-cols-3 gap-4';
                                     orderDiv.innerHTML = `
@@ -458,7 +467,7 @@
                                             <p>Время заказа: ${new Date(order.timestamp).toLocaleString('ru-RU')}</p>
                                             <p>Имя: ${order.user_name}</p>
                                             <p>Номер телефона: ${order.phone}</p>
-                                            <p>Метод оплаты: ${order.payment_method === 'cash' ? 'Наличные/Карта' : order.payment_method.charAt(0).toUpperCase() + order.payment_method.slice(1)}</p>
+                                            <p>Метод оплаты: ${paymentLabel}</p>
                                             <p>Статус оплаты: <span class="${order.payment_status === 'Оплачен' ? 'text-green-600' : order.payment_status === 'Оплата при выезде' ? 'text-blue-600' : 'text-red-600'} font-medium">${order.payment_status}</span></p>
                                             ${order.payment_status === 'Оплата при выезде' && order.payment_comment ? `<p>Комментарий: ${order.payment_comment}</p>` : ''}
                                             <div class="mt-2">
@@ -488,6 +497,7 @@
                                         </div>
                                     `;
                                     ordersContainer.appendChild(orderDiv);
+
                                     const select = orderDiv.querySelector('.payment-status-select');
                                     const commentInput = orderDiv.querySelector('.payment-comment');
                                     select.addEventListener('change', async () => {
@@ -684,6 +694,146 @@
                         console.error('Error loading reviews:', error);
                     }
                 }
+// === УПРАВЛЕНИЕ СТОЛИКАМИ (RU + UZ + ПРОЦЕНТ) ===
+async function loadTables() {
+    const select = document.getElementById('table-to-remove');
+    if (!select) return;
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/back/api/tables', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        const currentLang = localStorage.getItem('language') || 'ru';
+
+        select.innerHTML = '<option value="" disabled selected>Выберите столик...</option>';
+        data.tables.forEach(table => {
+            const opt = document.createElement('option');
+            opt.value = table.name_ru;
+            opt.textContent = currentLang === 'uz' ? table.name_uz : table.name_ru;
+            select.appendChild(opt);
+        });
+    } catch (e) {
+        console.error('Error loading tables:', e);
+    }
+}
+
+document.getElementById('add-table-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const payload = {
+        name_ru: formData.get('name_ru').trim(),
+        name_uz: formData.get('name_uz').trim(),
+        service_percent: parseInt(formData.get('service_percent'))
+    };
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/back/api/add-table', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        const msg = document.getElementById('add-table-message');
+        msg.textContent = data.message || data.error;
+        msg.className = 'message ' + (response.ok ? 'success-message' : 'error-message');
+        if (response.ok) {
+            e.target.reset();
+            loadTables();
+            loadLocationSelect();
+        }
+    } catch (error) {
+        console.error('Error adding table:', error);
+    }
+});
+
+document.getElementById('remove-table-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!confirm('Удалить этот столик? Все заказы останутся.')) return;
+
+    const formData = new FormData(e.target);
+    const name_ru = formData.get('name');
+    if (!name_ru) return;
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/back/api/remove-table', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name_ru })
+        });
+        const data = await response.json();
+        const msg = document.getElementById('remove-table-message');
+        msg.textContent = data.message || data.error;
+        msg.className = 'message ' + (response.ok ? 'success-message' : 'error-message');
+        if (response.ok) {
+            e.target.reset();
+            loadTables();
+            loadLocationSelect();
+        }
+    } catch (error) {
+        console.error('Error removing table:', error);
+    }
+});
+
+// === ОБНОВЛЕНИЕ СПИСКА ЛОКАЦИЙ В ГЕНЕРАТОРЕ ССЫЛОК ===
+async function loadLocationSelect() {
+    const select = document.getElementById('location-selection');
+    if (!select) return;
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/back/api/tables', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        const currentLang = localStorage.getItem('language') || 'ru';
+        const currentValue = select.value;
+
+        // Очищаем
+        select.innerHTML = `
+            <option value="" disabled selected>Выберите из списка...</option>
+            <optgroup label="Ресторан (Столики)"></optgroup>
+            <optgroup label="Зона 'Азия' (Топчаны)"></optgroup>
+            <optgroup label="Зона 'Восток' (Топчаны)"></optgroup>
+            <optgroup label="Отдельные домики"></optgroup>
+        `;
+
+        const groups = {
+            'Ресторан (Столики)': select.querySelector('optgroup[label="Ресторан (Столики)"]'),
+            "Зона 'Азия' (Топчаны)": select.querySelector('optgroup[label="Зона \'Азия\' (Топчаны)"]'),
+            "Зона 'Восток' (Топчаны)": select.querySelector('optgroup[label="Зона \'Восток\' (Топчаны)"]'),
+            'Отдельные домики': select.querySelector('optgroup[label="Отдельные домики"]')
+        };
+
+        data.tables.forEach(table => {
+            const displayName = currentLang === 'uz' ? table.name_uz : table.name_ru;
+            let group = groups['Ресторан (Столики)'];
+            if (table.name_ru.includes('Азия')) group = groups["Зона 'Азия' (Топчаны)"];
+            else if (table.name_ru.includes('Восток')) group = groups["Зона 'Восток' (Топчаны)"];
+            else if (['Беседка 1', 'Беседка 2', 'Типи'].includes(table.name_ru)) group = groups['Отдельные домики'];
+
+            const opt = document.createElement('option');
+            opt.value = table.name_ru; // всегда RU для токена
+            opt.textContent = displayName;
+            group.appendChild(opt);
+        });
+
+        if (currentValue && data.tables.some(t => t.name_ru === currentValue)) {
+            select.value = currentValue;
+        }
+    } catch (e) {
+        console.error('Error loading locations:', e);
+    }
+}
                 function renderPagination(containerId, total, currentPage, limit, loadFunction) {
                     const container = document.getElementById(containerId);
                     container.innerHTML = '';
@@ -710,6 +860,12 @@
 
                 // === ИЗМЕНЕННАЯ ЛОГИКА ВЫБОРА ВКЛАДОК ===
                 tabButtons.forEach(button => {
+                    if (button.dataset.tab === 'create-links') {
+                        const activeSub = document.querySelector('#create-links-content .admin-sub-tab-button.active');
+                        if (activeSub && activeSub.dataset.subTab === 'review-qr') {
+                            generateReviewQRCode();
+                        }
+                    }
                     button.addEventListener('click', () => {
                         // 1. Активировать главную вкладку
                         tabButtons.forEach(btn => btn.classList.remove('active'));
@@ -751,6 +907,10 @@
                                 loadCompletedOrders(completedOrdersCurrentPage, completedOrdersLimit);
                             }
                         }
+                        if (button.dataset.tab === 'tables') {
+                            loadTables();
+                            loadLocationSelect();
+                        }
                         if (button.dataset.tab === 'dishes') {
                             loadDishes();
                             loadCategories();
@@ -760,7 +920,6 @@
                         }
                         if (button.dataset.tab === 'reviews') loadReviews(reviewsCurrentPage, reviewsLimit);
                         // Для 'create-links' отдельная загрузка данных не нужна
-                        // Для 'tables' отдельная загрузка не нужна
                     });
                 });
                 // ===========================================
@@ -768,40 +927,34 @@
                 // ===========================================
                 // ===== ИСПРАВЛЕННЫЙ БЛОК ДЛЯ ПОД-ВКЛАДОК =====
                 // ===========================================
-                const subTabButtons = document.querySelectorAll('.admin-sub-tab-button');
-                subTabButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        // Найти родительский контейнер, чтобы сбрасывать только "соседние" вкладки
-                        const parentContainer = button.closest('[data-tab-content]');
-                        if (!parentContainer) return; // Добавим проверку на всякий случай
+const subTabButtons = document.querySelectorAll('.admin-sub-tab-button');
+subTabButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const parentContainer = button.closest('[data-tab-content]');
+        if (!parentContainer) return;
 
-                        const siblingSubTabs = parentContainer.querySelectorAll('.admin-sub-tab-button');
-                        const siblingSubContents = parentContainer.querySelectorAll('[data-sub-tab-content]');
+        const siblingSubTabs = parentContainer.querySelectorAll('.admin-sub-tab-button');
+        const siblingSubContents = parentContainer.querySelectorAll('[data-sub-tab-content]');
 
-                        siblingSubTabs.forEach(btn => btn.classList.remove('active'));
-                        button.classList.add('active');
+        siblingSubTabs.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
 
-                        siblingSubContents.forEach(content => content.classList.add('hidden'));
-                        const targetSubContent = document.getElementById(`${button.dataset.subTab}-sub-content`);
-
-                        if (targetSubContent) { // Тоже добавим проверку
-                            targetSubContent.classList.remove('hidden');
-                        }
-
-                        if (button.dataset.subTab === 'remove-dish') loadDishes();
-                        if (button.dataset.subTab === 'incoming-orders') loadIncomingOrders(incomingOrdersCurrentPage, incomingOrdersLimit);
-                        if (button.dataset.subTab === 'active-orders') loadActiveOrders(activeOrdersCurrentPage, activeOrdersLimit);
-                        if (button.dataset.subTab === 'completed-orders') loadCompletedOrders(completedOrdersCurrentPage, completedOrdersLimit);
-                        // === НОВЫЙ КОД ===
-                        if (button.dataset.subTab === 'review-qr') {
-                            generateReviewQRCode();
-                        }
-                        // ================
-                    });
-                });
-                // ===========================================
-                // ===== КОНЕЦ ИСПРАВЛЕННОГО БЛОКА =========
-                // ===========================================
+        siblingSubContents.forEach(content => content.classList.add('hidden'));
+        const targetSubContent = document.getElementById(`${button.dataset.subTab}-sub-content`);
+        if (targetSubContent) {
+            targetSubContent.classList.remove('hidden');
+        }
+        if (button.dataset.subTab === 'add-table' || button.dataset.subTab === 'remove-table') {
+            loadTables();
+            loadLocationSelect();
+        }
+        if (button.dataset.subTab === 'remove-dish') loadDishes();
+        if (button.dataset.subTab === 'incoming-orders') loadIncomingOrders(incomingOrdersCurrentPage, incomingOrdersLimit);
+        if (button.dataset.subTab === 'active-orders') loadActiveOrders(activeOrdersCurrentPage, activeOrdersLimit);
+        if (button.dataset.subTab === 'completed-orders') loadCompletedOrders(completedOrdersCurrentPage, completedOrdersLimit);
+        if (button.dataset.subTab === 'review-qr') generateReviewQRCode();
+    });
+});
 
                 addDishForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
@@ -873,34 +1026,7 @@
                         removeCategoryMessage.classList.add('error-message');
                     }
                 });
-                locationLinkForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const formData = new FormData(locationLinkForm);
-                    try {
-                        const response = await fetch('/back/api/generate-table-link', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` },
-                            body: formData
-                        });
-                        const data = await response.json();
-                        if (response.ok) {
-                            locationLinkOutput.href = data.link;
-                            locationLinkOutput.textContent = data.link;
-                            locationLinkMessage.textContent = 'Ссылка успешно сгенерирована';
-                            locationLinkMessage.classList.add('success-message');
 
-                            // Генерируем и показываем QR-код
-                            await generateAndDisplayQRCode(data.link);
-                        } else {
-                            locationLinkMessage.textContent = data.error || 'Ошибка генерации ссылки';
-                            locationLinkMessage.classList.add('error-message');
-                        }
-                    } catch (error) {
-                        console.error('Error generating link:', error);
-                        locationLinkMessage.textContent = 'Ошибка соединения с сервером';
-                        locationLinkMessage.classList.add('error-message');
-                    }
-                });
                 document.getElementById('logout').addEventListener('click', () => {
                     localStorage.removeItem('token');
                     window.location.href = './login.html';
@@ -942,7 +1068,7 @@
 
                 // === НОВАЯ ФУНКЦИЯ ДЛЯ QR-КОДА ОТЗЫВОВ ===
                 async function generateReviewQRCode() {
-                    const url = window.location.origin + '/reviews.html'; // Полный URL для правильной работы QR
+                    const url = 'reviews.html'; // URL для страницы отзывов
                     const qrParent = document.querySelector('.qr-code-parent-reviews');
                     const qrImage = document.querySelector('.qr-code-reviews');
                     const downloadBtn = document.getElementById('download-qr-reviews');
@@ -1012,35 +1138,6 @@
                         locationLinkMessage.classList.add('error-message');
                     }
                 });
-
-                // Обработчик для новой формы столиков (пример, адаптируйте под сервер)
-                const addTableForm = document.getElementById('add-table-form');
-                const addTableMessage = document.getElementById('add-table-message');
-                if (addTableForm) {
-                    addTableForm.addEventListener('submit', async (e) => {
-                        e.preventDefault();
-                        const formData = new FormData(addTableForm);
-                        try {
-                            const response = await fetch('/back/api/add-table', { // Предполагаемый endpoint
-                                method: 'POST',
-                                headers: { 'Authorization': `Bearer ${token}` },
-                                body: formData
-                            });
-                            const data = await response.json();
-                            addTableMessage.textContent = data.message || data.error;
-                            addTableMessage.classList.add(response.ok ? 'success-message' : 'error-message');
-                            addTableMessage.classList.remove(response.ok ? 'error-message' : 'success-message');
-                            if (response.ok) {
-                                addTableForm.reset();
-                                // Если нужно, загрузить список столиков
-                            }
-                        } catch (error) {
-                            console.error('Error adding table:', error);
-                            addTableMessage.textContent = 'Ошибка соединения с сервером';
-                            addTableMessage.classList.add('error-message');
-                        }
-                    });
-                }
             })();
 
         }
@@ -1055,9 +1152,9 @@
                 <button data-tab="orders" class="admin-tab-button active">Заказы</button>
                 <button data-tab="dishes" class="admin-tab-button">Блюда</button>
                 <button data-tab="categories" class="admin-tab-button">Категории</button>
+                <button data-tab="tables" class="admin-tab-button">Столики</button>
                 <button data-tab="create-links" class="admin-tab-button">Создание ссылок</button>
                 <button data-tab="reviews" class="admin-tab-button">Отзывы</button>
-                <button data-tab="tables" class="admin-tab-button">Столики</button>
             </nav>
         </div>
     </div>
@@ -1101,12 +1198,12 @@
                     <form id="add-dish-form" class="admin-card space-y-4" enctype="multipart/form-data">
                         <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-3 sm:mb-4">Добавление Нового Блюда</h3>
                         <div>
-                            <label for="dish-name" class="block text-sm font-medium text-gray-700 mb-1">Название Блюда (Рус)</label>
-                            <input type="text" id="dish-name" name="name" class="admin-input" placeholder="Например, Пицца Маргарита" required>
+                            <label for="dish-name" class="block text-sm font-medium text-gray-700 mb-1">Название (Рус)</label>
+                            <input type="text" id="dish-name" name="name_ru" class="admin-input" placeholder="Пицца Маргарита" required>
                         </div>
                         <div>
-                            <label for="dish-name-en" class="block text-sm font-medium text-gray-700 mb-1">Название Блюда (Uzb)</label>
-                            <input type="text" id="dish-name-en" name="name_en" class="admin-input" placeholder="Например, Pizza Margarita" required>
+                            <label for="dish-name-uz" class="block text-sm font-medium text-gray-700 mb-1">Название (Uzb)</label>
+                            <input type="text" id="dish-name-uz" name="name_uz" class="admin-input" placeholder="Pitsa Margarita" required>
                         </div>
                         <div>
                             <label for="dish-category" class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
@@ -1115,8 +1212,12 @@
                             </select>
                         </div>
                         <div>
-                            <label for="dish-description" class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
-                            <textarea id="dish-description" name="description" rows="3" class="admin-input" placeholder="Краткое описание блюда" required></textarea>
+                            <label for="dish-description" class="block text-sm font-medium text-gray-700 mb-1">Описание (Рус)</label>
+                            <textarea id="dish-description" name="description_ru" rows="3" class="admin-input" required></textarea>
+                        </div>
+                        <div>
+                            <label for="dish-description-uz" class="block text-sm font-medium text-gray-700 mb-1">Описание (Uzb)</label>
+                            <textarea id="dish-description-uz" name="description_uz" rows="3" class="admin-input" required></textarea>
                         </div>
                         <div>
                             <label for="dish-price" class="block text-sm font-medium text-gray-700 mb-1">Цена (сум)</label>
@@ -1137,6 +1238,7 @@
                 </div>
             </div>
         </section>
+
         <section id="categories-content" data-tab-content class="space-y-4 sm:space-y-6 hidden">
             <h2 class="admin-content-title">Управление Категориями</h2>
             <div class="admin-sub-tabs flex space-x-4 sm:space-x-6 border-b pb-2 mb-4">
@@ -1148,12 +1250,12 @@
                     <form id="add-category-form" class="admin-card space-y-4">
                         <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-3 sm:mb-4">Добавление Новой Категории</h3>
                         <div>
-                            <label for="category-name" class="block text-sm font-medium text-gray-700 mb-1">Название Категории (Рус)</label>
-                            <input type="text" id="category-name" name="name" class="admin-input" placeholder="Например, Пицца" required>
+                            <label for="category-name" class="block text-sm font-medium text-gray-700 mb-1">Название (Рус)</label>
+                            <input type="text" id="category-name" name="name_ru" class="admin-input" placeholder="Пицца" required>
                         </div>
                         <div>
-                            <label for="category-name-en" class="block text-sm font-medium text-gray-700 mb-1">Название Категории (Uzb)</label>
-                            <input type="text" id="category-name-en" name="name_en" class="admin-input" placeholder="Например, Pizza" required>
+                            <label for="category-name-uz" class="block text-sm font-medium text-gray-700 mb-1">Название (Uzb)</label>
+                            <input type="text" id="category-name-uz" name="name_uz" class="admin-input" placeholder="Pitsa" required>
                         </div>
                         <div>
                             <label for="category-value" class="block text-sm font-medium text-gray-700 mb-1">Значение (Eng, для ID)</label>
@@ -1174,6 +1276,49 @@
                         </div>
                         <button type="submit" class="admin-submit-button w-full bg-red-600 hover:bg-red-700">Удалить Категорию</button>
                         <div id="remove-category-message" class="message"></div>
+                    </form>
+                </div>
+            </div>
+        </section>
+        <section id="tables-content" data-tab-content class="space-y-4 sm:space-y-6 hidden">
+            <h2 class="admin-content-title">Управление Столиками</h2>
+            <div class="admin-sub-tabs flex space-x-4 sm:space-x-6 border-b pb-2 mb-4">
+                <button data-sub-tab="add-table" class="admin-sub-tab-button active">Добавить столик</button>
+                <button data-sub-tab="remove-table" class="admin-sub-tab-button">Удалить столик</button>
+            </div>
+            <div class="sub-content-container">
+                <!-- Добавление столика -->
+                <div id="add-table-sub-content" data-sub-tab-content class="space-y-4 sm:space-y-6">
+                    <form id="add-table-form" class="admin-card space-y-4">
+                        <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-3 sm:mb-4">Добавить Новый Столик</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Название (Рус)</label>
+                            <input type="text" name="name_ru" class="admin-input" placeholder="Восток 9" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Название (Uzb)</label>
+                            <input type="text" name="name_uz" class="admin-input" placeholder="Sharq 9" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Процент обслуживания (%)</label>
+                            <input type="number" name="service_percent" class="admin-input" min="0" max="100" value="10" required>
+                        </div>
+                        <button type="submit" class="admin-submit-button w-full">Добавить Столик</button>
+                        <div id="add-table-message" class="message"></div>
+                    </form>
+                </div>
+                <!-- Удаление столика -->
+                <div id="remove-table-sub-content" data-sub-tab-content class="space-y-4 sm:space-y-6 hidden">
+                    <form id="remove-table-form" class="admin-card space-y-4">
+                        <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-3 sm:mb-4">Удалить Столик</h3>
+                        <div>
+                            <label for="table-to-remove" class="block text-sm font-medium text-gray-700 mb-1">Выберите столик для удаления</label>
+                            <select id="table-to-remove" name="name" class="admin-input" required>
+                                <option value="" disabled selected>Выберите столик...</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="admin-submit-button w-full bg-red-600 hover:bg-red-700">Удалить Столик</button>
+                        <div id="remove-table-message" class="message"></div>
                     </form>
                 </div>
             </div>
@@ -1245,7 +1390,7 @@
                     <div class="admin-card space-y-4">
                         <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-3 sm:mb-4">QR-код для страницы Отзывов</h3>
                         <div class="qr-code-parent-reviews flex flex-col sm:flex-row items-center hidden">
-                            <img class="qr-code-reviews h-32 sm:h-40" src="" alt="qr-code-reviews">
+                            <img class="qr-code-reviews h-32 sm:h-40" src="./src/qr-code-reviews.png" alt="qr-code-reviews">
                             <button type="button" id="download-qr-reviews" class="max-w-xs sm:max-w-40 m-4 sm:mt-16 p-2 rounded-md w-full h-10 border bg-[#597e52] text-white">Скачать</button>
                         </div>
                     </div>
@@ -1257,24 +1402,6 @@
             <div class="admin-card space-y-4">
                 <div id="reviews-list" class="space-y-4"></div>
                 <div id="reviews-pagination" class="flex justify-center mt-4"></div>
-            </div>
-        </section>
-        <section id="tables-content" data-tab-content class="space-y-4 sm:space-y-6 hidden">
-            <h2 class="admin-content-title">Управление Столиками</h2>
-            <div class="admin-card space-y-4">
-                <form id="add-table-form" class="space-y-4">
-                    <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-3 sm:mb-4">Добавление Столика</h3>
-                    <div>
-                        <label for="table-name" class="block text-sm font-medium text-gray-700 mb-1">Название Столика</label>
-                        <input type="text" id="table-name" name="name" class="admin-input" placeholder="Например, Столик 1" required>
-                    </div>
-                    <div>
-                        <label for="table-percentage" class="block text-sm font-medium text-gray-700 mb-1">Процент</label>
-                        <input type="number" id="table-percentage" name="percentage" class="admin-input" placeholder="Например, 10" min="0" max="100" required>
-                    </div>
-                    <button type="submit" class="admin-submit-button w-full">Сохранить Столик</button>
-                    <div id="add-table-message" class="message"></div>
-                </form>
             </div>
         </section>
     </div>

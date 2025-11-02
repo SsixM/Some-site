@@ -170,6 +170,7 @@
 </head>
 <body class="bg-[#f4eee1] text-[#3b443d] font-sans">
 
+<!-- === ПЕРЕКЛЮЧАТЕЛЬ ЯЗЫКА === -->
 <div id="language-switcher">
     <div class="lang-slider-container">
         <div id="lang-slider-bg" class="lang-slider-bg"></div>
@@ -219,14 +220,16 @@
 <div class="container mx-auto p-4 sm:p-10 max-w-7xl">
     <h1 id="main-title" class="text-4xl md:text-5xl font-bold text-center mb-10 tracking-tight">Меню</h1>
 
+    <!-- === НАВИГАЦИЯ === -->
     <div class="sticky top-0 z-10 bg-white shadow-md border-b border-gray-200">
         <div class="container mx-auto max-w-7xl px-4">
-            <nav class="flex w-full justify-start md:justify-center overflow-x-auto overflow-y-none space-x-2 py-3 pl-20 pr-20 md:pl-0 md:pr-0">
+            <nav class="flex w-full justify-start md:justify-center overflow-x-auto overflow-y-none space-x-2 py-3 pr-20 md:pr-0">
             </nav>
         </div>
     </div>
 </div>
 
+<!-- === МОДАЛЬНОЕ ОКНО === -->
 <div id="order-success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center mx-4">
         <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,20 +243,21 @@
     </div>
 </div>
 
+<!-- === УВЕДОМЛЕНИЯ === -->
 <div id="notification-container"></div>
 
+<!-- === КОРЗИНА === -->
 <div id="floating-cart-btn" class="transition-all duration-300">
     <button id="cart-btn" class="relative w-14 h-14 bg-[#597e52] text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 576 512" fill="currentColor">
             <path d="M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z"></path>
         </svg>
-        <span id="cart-count" class="cart-count-badge">
-            0
-        </span>
+        <span id="cart-count" class="cart-count-badge">0</span>
     </button>
 </div>
 
 <script>
+    // === ПЕРЕВОДЫ ===
     const translations = {
         ru: {
             title: 'Меню',
@@ -280,42 +284,65 @@
     };
 
     let currentLang = localStorage.getItem('language') || 'ru';
+    let menuData = null;
 
+    // === ЛОКАЛИЗАЦИЯ ===
+    function t(key) {
+        return translations[currentLang][key] || translations.ru[key];
+    }
+
+    function getLocalized(obj, field) {
+        return obj[`${field}_${currentLang}`] || obj[field] || obj[`${field}_ru`] || '';
+    }
+
+    // === ПЕРЕКЛЮЧЕНИЕ ЯЗЫКА ===
     function switchLanguage(lang) {
         currentLang = lang;
         localStorage.setItem('language', lang);
 
-        const sliderBg = document.getElementById('lang-slider-bg');
-        const ruOption = document.getElementById('lang-ru');
-        const uzOption = document.getElementById('lang-uz');
+        const bg = document.getElementById('lang-slider-bg');
+        const ru = document.getElementById('lang-ru');
+        const uz = document.getElementById('lang-uz');
 
         if (lang === 'uz') {
-            sliderBg.classList.add('uz');
-            ruOption.classList.remove('active');
-            uzOption.classList.add('active');
+            bg.classList.add('uz');
+            ru.classList.remove('active');
+            uz.classList.add('active');
         } else {
-            sliderBg.classList.remove('uz');
-            ruOption.classList.add('active');
-            uzOption.classList.remove('active');
+            bg.classList.remove('uz');
+            ru.classList.add('active');
+            uz.classList.remove('active');
         }
 
-        updateUILanguage();
+        updateAllTexts();
     }
 
-    function updateUILanguage() {
-        const t = translations[currentLang];
+    function updateAllTexts() {
+        // Статичные тексты
+        document.getElementById('main-title').textContent = t('title');
+        document.getElementById('modal-title').textContent = t('orderPlaced');
+        document.getElementById('modal-text').textContent = t('orderText');
+        document.getElementById('close-order-modal').textContent = t('okay');
 
-        document.getElementById('main-title').textContent = t.title;
-        document.getElementById('modal-title').textContent = t.orderPlaced;
-        document.getElementById('modal-text').textContent = t.orderText;
-        document.getElementById('close-order-modal').textContent = t.okay;
+        // Кнопки "Добавить"
+        document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+            btn.textContent = t('addToCart');
+        });
 
-        const addButtons = document.querySelectorAll('.add-to-cart-btn');
-        addButtons.forEach(btn => {
-            btn.textContent = t.addToCart;
+        // Обновляем меню
+        if (menuData) renderMenu();
+
+        // Обновляем уведомления (если есть)
+        document.querySelectorAll('.cart-notification').forEach(notif => {
+            const itemName = notif.querySelector('.text-sm').textContent;
+            const isRemoval = notif.querySelector('span').textContent.includes('Удалено') || notif.querySelector('span').textContent.includes('o\'chirildi');
+            notif.querySelector('span').textContent = isRemoval ? t('removedFromCart') : t('addedToCart');
+            notif.querySelector('.text-sm').textContent = itemName;
+            notif.querySelector('.text-base.font-bold').nextElementSibling.textContent = t('cart');
         });
     }
 
+    // === ПРОВЕРКА ТОКЕНА ===
     function isTokenExpired(token) {
         if (!token) return true;
         const parts = token.split('.');
@@ -325,10 +352,8 @@
             const savedTime = localStorage.getItem('tableTokenSavedAt');
             if (!savedTime) return true;
             const tokenAgeMs = Date.now() - parseInt(savedTime, 10);
-            const oneDayMs = 24 * 60 * 60 * 1000;
-            if (tokenAgeMs > oneDayMs) return true;
-            const now = Math.floor(Date.now() / 1000);
-            return payload.exp < now;
+            if (tokenAgeMs > 24 * 60 * 60 * 1000) return true;
+            return payload.exp < Math.floor(Date.now() / 1000);
         } catch (e) {
             return true;
         }
@@ -339,14 +364,18 @@
         localStorage.removeItem('tableNumber');
         window.location.href = './redirect.html';
     } else {
+
+        // === КАРТОЧКА БЛЮДА ===
         function createMenuCard(item) {
             const card = document.createElement('div');
             card.className = 'menu-category-card';
+            card.dataset.itemId = item.id;
 
             const img = document.createElement('img');
-            img.alt = item.name || '';
+            img.alt = getLocalized(item, 'name');
             img.src = item.image || 'src/images/placeholder.jpg';
             img.className = 'menu-category-card-image';
+            img.loading = 'lazy';
             card.appendChild(img);
 
             const content = document.createElement('div');
@@ -354,12 +383,12 @@
 
             const title = document.createElement('h3');
             title.className = 'menu-category-card-text';
-            title.textContent = item.name;
+            title.textContent = getLocalized(item, 'name');
             content.appendChild(title);
 
             const desc = document.createElement('p');
             desc.className = 'menu-category-card-text-desc';
-            desc.textContent = item.description;
+            desc.textContent = getLocalized(item, 'description');
             content.appendChild(desc);
 
             const parent = document.createElement('div');
@@ -367,7 +396,7 @@
 
             const price = document.createElement('p');
             price.className = 'menu-category-card-parent-price';
-            price.textContent = `${item.price} ${translations[currentLang].currency}`;
+            price.textContent = `${item.price} ${t('currency')}`;
             parent.appendChild(price);
 
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -375,276 +404,237 @@
             const quantity = cartItem ? cartItem.quantity : 0;
 
             if (quantity > 0) {
-                const controls = document.createElement('div');
-                controls.className = 'quantity-controls';
-
-                const minus = document.createElement('button');
-                minus.className = 'quantity-btn';
-                minus.textContent = '-';
-                minus.onclick = () => updateCart(item, -1);
-                controls.appendChild(minus);
-
-                const display = document.createElement('span');
-                display.className = 'quantity-display';
-                display.textContent = quantity;
-                controls.appendChild(display);
-
-                const plus = document.createElement('button');
-                plus.className = 'quantity-btn';
-                plus.textContent = '+';
-                plus.onclick = () => updateCart(item, 1);
-                controls.appendChild(plus);
-
-                parent.appendChild(controls);
+                parent.appendChild(createQuantityControls(item, quantity));
             } else {
-                const addBtn = document.createElement('button');
-                addBtn.className = 'add-to-cart-btn';
-                addBtn.textContent = translations[currentLang].addToCart;
-                addBtn.onclick = () => updateCart(item, 1);
-                parent.appendChild(addBtn);
+                const btn = document.createElement('button');
+                btn.className = 'add-to-cart-btn';
+                btn.textContent = t('addToCart');
+                btn.onclick = () => updateCart(item, 1);
+                parent.appendChild(btn);
             }
 
             content.appendChild(parent);
             card.appendChild(content);
-
             return card;
         }
 
-        function updateCart(item, delta) {
-            let cart = JSON.parse(localStorage.getItem('cart')) || [];
-            let cartItem = cart.find(i => i.id === item.id);
+        function createQuantityControls(item, quantity) {
+            const div = document.createElement('div');
+            div.className = 'quantity-controls';
 
-            if (cartItem) {
-                cartItem.quantity += delta;
-                if (cartItem.quantity <= 0) {
-                    cart = cart.filter(i => i.id !== item.id);
-                    showNotification(item, true);
-                } else {
-                    showNotification(item, false);
-                }
-            } else if (delta > 0) {
-                cartItem = { ...item, quantity: 1 };
-                cart.push(cartItem);
-                showNotification(item);
-            }
+            ['-', quantity, '+'].forEach((text, i) => {
+                const el = document.createElement(i === 1 ? 'span' : 'button');
+                el.className = i === 1 ? 'quantity-display' : 'quantity-btn';
+                el.textContent = text;
+                if (i !== 1) el.onclick = () => updateCart(item, i === 0 ? -1 : 1);
+                div.appendChild(el);
+            });
 
-            localStorage.setItem('cart', JSON.stringify(cart));
-            updateCartButton();
+            return div;
+        }
 
+        // === КОРЗИНА ===
+function updateCart(item, delta) {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    let existing = cart.find(i => i.id === item.id);
+
+    if (existing) {
+        existing.quantity += delta;
+        if (existing.quantity <= 0) {
+            cart = cart.filter(i => i.id !== item.id);
+            showNotification(item, true);
+        } else {
+            showNotification(item, false);
+        }
+    } else if (delta > 0) {
+        // Сохраняем ВСЕ поля для RU/UZ
+        const cartItem = {
+            id: item.id,
+            name_ru: item.name_ru,
+            name_uz: item.name_uz,
+            description_ru: item.description_ru,
+            description_uz: item.description_uz,
+            price: item.price,
+            image: item.image,
+            quantity: 1
+        };
+        cart.push(cartItem);
+        showNotification(item);
+    }
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartButton();
+    updateCardUI(item);
+}
+        function updateCardUI(item) {
             const card = document.querySelector(`[data-item-id="${item.id}"]`);
-            if (card) {
-                const parent = card.querySelector('.menu-category-card-parent');
-                const quantity = cartItem ? cartItem.quantity : 0;
+            if (!card) return;
 
-                const existingControls = parent.querySelector('.quantity-controls');
-                const existingBtn = parent.querySelector('.add-to-cart-btn');
+            const parent = card.querySelector('.menu-category-card-parent');
+            const old = parent.querySelector('.quantity-controls, .add-to-cart-btn');
+            if (old) old.remove();
 
-                if (existingControls) existingControls.remove();
-                if (existingBtn) existingBtn.remove();
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const qty = cart.find(i => i.id === item.id)?.quantity || 0;
 
-                if (quantity > 0) {
-                    const controls = document.createElement('div');
-                    controls.className = 'quantity-controls';
-
-                    const minus = document.createElement('button');
-                    minus.className = 'quantity-btn';
-                    minus.textContent = '-';
-                    minus.onclick = () => updateCart(item, -1);
-                    controls.appendChild(minus);
-
-                    const display = document.createElement('span');
-                    display.className = 'quantity-display';
-                    display.textContent = quantity;
-                    controls.appendChild(display);
-
-                    const plus = document.createElement('button');
-                    plus.className = 'quantity-btn';
-                    plus.textContent = '+';
-                    plus.onclick = () => updateCart(item, 1);
-                    controls.appendChild(plus);
-
-                    parent.appendChild(controls);
-                } else {
-                    const addBtn = document.createElement('button');
-                    addBtn.className = 'add-to-cart-btn';
-                    addBtn.textContent = translations[currentLang].addToCart;
-                    addBtn.onclick = () => updateCart(item, 1);
-                    parent.appendChild(addBtn);
-                }
+            if (qty > 0) {
+                parent.appendChild(createQuantityControls(item, qty));
+            } else {
+                const btn = document.createElement('button');
+                btn.className = 'add-to-cart-btn';
+                btn.textContent = t('addToCart');
+                btn.onclick = () => updateCart(item, 1);
+                parent.appendChild(btn);
             }
         }
 
-        function showNotification(item, isRemoval = false) {
-            const t = translations[currentLang];
-            const container = document.getElementById('notification-container');
-            const notifications = container.children;
-            const currentCount = notifications.length;
-            const isMobile = window.innerWidth < 768;
-            const maxNotifications = isMobile ? 2 : 3;
+function showNotification(item, isRemoval = false) {
+    const container = document.getElementById('notification-container');
+    const max = window.innerWidth < 768 ? 2 : 3;
+    if (container.children.length >= max) {
+        hideNotification(container.children[0].id);
+    }
 
-            if (currentCount >= maxNotifications) {
-                const oldestNotification = notifications[0];
-                if (oldestNotification) {
-                    hideNotification(oldestNotification.id);
-                }
-            }
+    const id = `notif-${Date.now()}`;
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = 'cart-notification';
 
-            const notificationId = `cart-notification-${Date.now()}-${Math.random()}`;
-            const notification = document.createElement('div');
-            notification.id = notificationId;
-            notification.className = 'cart-notification';
-
-            notification.innerHTML = `
-                <div class="flex items-center gap-3 p-4">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 rounded-full bg-[#597e52]/15 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 576 512" fill="#597e52">
-                                <path d="M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-base font-semibold text-[#3b443d]">${isRemoval ? t.removedFromCart : t.addedToCart}</span>
-                            <button onclick="hideNotification('${notificationId}')" class="flex-shrink-0 ml-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" height="14" width="14" viewBox="0 0 384 512" class="fill-[#3b443d]/30 hover:fill-[#3b443d] transition-colors">
-                                    <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"></path>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="text-sm text-[#3b443d]/80 font-medium mb-2 truncate">${item.name}</div>
-                        <div class="flex items-center justify-between">
-                            <div class="text-base font-bold text-[#597e52]">${item.price} ${t.currency}</div>
-                            <button onclick="window.location.href='./cart.html'" class="py-1.5 px-3 bg-[#597e52] rounded-full flex items-center gap-1.5 text-white font-semibold text-xs hover:bg-[#4a6945] transition-colors">
-                                ${t.cart}
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.28 10.28a.75.75 0 000-1.06l-3-3a.75.75 0 10-1.06 1.06l1.72 1.72H8.25a.75.75 0 000 1.5h5.69l-1.72 1.72a.75.75 0 101.06 1.06l3-3z" clip-rule="evenodd"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
+    div.innerHTML = `
+        <div class="flex items-center gap-3 p-4">
+            <div class="flex-shrink-0">
+                <div class="w-12 h-12 rounded-full bg-[#597e52]/15 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 576 512" fill="#597e52">
+                        <path d="M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z"></path>
+                    </svg>
                 </div>
-            `;
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-base font-semibold text-[#3b443d]">${isRemoval ? t('removedFromCart') : t('addedToCart')}</span>
+                    <button onclick="hideNotification('${id}')" class="ml-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="14" width="14" viewBox="0 0 384 512" class="fill-[#3b443d]/30 hover:fill-[#3b443d]">
+                            <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="text-sm text-[#3b443d]/80 font-medium mb-2 truncate">${getLocalized(item, 'name')}</div>
+                <div class="flex items-center justify-between">
+                    <div class="text-base font-bold text-[#597e52]">${item.price} ${t('currency')}</div>
+                    <button onclick="window.location.href='./cart.html'" class="py-1.5 px-3 bg-[#597e52] rounded-full flex items-center gap-1.5 text-white font-semibold text-xs hover:bg-[#4a6945]">
+                        ${t('cart')}
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                            <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.28 10.28a.75.75 0 000-1.06l-3-3a.75.75 0 10-1.06 1.06l1.72 1.72H8.25a.75.75 0 000 1.5h5.69l-1.72 1.72a.75.75 0 101.06 1.06l3-3z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
 
-            container.appendChild(notification);
-            setTimeout(() => notification.classList.add('visible'), 100);
-        }
+    container.appendChild(div);
+    setTimeout(() => div.classList.add('visible'), 100);
 
-        function hideNotification(notificationId) {
-            const notification = document.getElementById(notificationId);
-            if (notification) {
-                notification.classList.remove('visible');
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
+    // Исправлено: используем правильную переменную id
+    setTimeout(() => {
+        hideNotification(id);
+    }, 750);
+}
+
+
+        function hideNotification(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('visible');
+                setTimeout(() => el.remove(), 300);
             }
         }
 
+        // === ЗАГРУЗКА И ОТРИСОВКА МЕНЮ ===
         async function loadMenu() {
             try {
-                const response = await fetch('/back/api/menu');
-                if (!response.ok) throw new Error('Ошибка загрузки меню');
-                const data = await response.json();
-                const categories = data.categories;
-
-                if (!categories || typeof categories !== 'object') {
-                    console.error('Неверный формат категорий:', categories);
-                    return;
-                }
-
-                const container = document.querySelector('.container.mx-auto.p-4');
-                const nav = document.querySelector('nav');
-                nav.innerHTML = '';
-
-                Object.entries(categories).forEach(([catKey, catData]) => {
-                    const link = document.createElement('a');
-                    link.href = `#${catKey}`;
-                    link.className = 'navelement whitespace-nowrap';
-                    link.textContent = catData.name;
-                    nav.appendChild(link);
-
-                    const section = document.createElement('section');
-                    section.className = 'mb-12';
-
-                    const h2 = document.createElement('h2');
-                    h2.id = catKey;
-                    h2.className = 'menu-category-title';
-                    h2.textContent = catData.name;
-                    section.appendChild(h2);
-
-                    const grid = document.createElement('div');
-                    grid.className = 'menu-category-grid';
-
-                    catData.items.forEach(item => {
-                        const card = createMenuCard(item);
-                        card.dataset.itemId = item.id;
-                        grid.appendChild(card);
-                    });
-
-                    section.appendChild(grid);
-                    container.appendChild(section);
-                });
-            } catch (error) {
-                console.error('Ошибка:', error);
+                const res = await fetch('/back/api/menu');
+                if (!res.ok) throw new Error('Ошибка сети');
+                menuData = await res.json();
+                renderMenu();
+            } catch (e) {
+                console.error(e);
             }
+        }
+
+        function renderMenu() {
+            const container = document.querySelector('.container.mx-auto.p-4');
+            const nav = document.querySelector('nav');
+            nav.innerHTML = '';
+
+            // Удаляем старые секции
+            container.querySelectorAll('section').forEach(s => s.remove());
+
+            Object.entries(menuData.categories).forEach(([key, cat]) => {
+                // Навигация
+                const a = document.createElement('a');
+                a.href = `#${key}`;
+                a.className = 'navelement whitespace-nowrap';
+                a.textContent = getLocalized(cat, 'name');
+                nav.appendChild(a);
+
+                // Секция
+                const sec = document.createElement('section');
+                sec.className = 'mb-12';
+                sec.id = key;
+
+                const h2 = document.createElement('h2');
+                h2.className = 'menu-category-title';
+                h2.textContent = getLocalized(cat, 'name');
+                sec.appendChild(h2);
+
+                const grid = document.createElement('div');
+                grid.className = 'menu-category-grid';
+
+                cat.items.forEach(item => {
+                    grid.appendChild(createMenuCard(item));
+                });
+
+                sec.appendChild(grid);
+                container.appendChild(sec);
+            });
+
+            updateCartButton();
         }
 
         function updateCartButton() {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
-            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-            const countEl = document.getElementById('cart-count');
-            const btn = document.getElementById('cart-btn');
-
-            countEl.textContent = totalItems;
-            if (totalItems > 0) {
-                countEl.classList.remove('scale-0');
-                countEl.classList.add('scale-100');
-            } else {
-                countEl.classList.remove('scale-100');
-                countEl.classList.add('scale-0');
-            }
-
-            btn.onclick = () => window.location.href = './cart.html';
+            const total = cart.reduce((s, i) => s + i.quantity, 0);
+            const badge = document.getElementById('cart-count');
+            badge.textContent = total;
+            badge.classList.toggle('scale-0', total === 0);
+            badge.classList.toggle('scale-100', total > 0);
+            document.getElementById('cart-btn').onclick = () => window.location.href = './cart.html';
         }
 
-        async function init() {
+        // === ИНИЦИАЛИЗАЦИЯ ===
+        function init() {
             switchLanguage(currentLang);
-            await loadMenu();
-            updateCartButton();
+            loadMenu();
 
-            const navLinks = document.querySelectorAll('.navelement');
-            const sections = document.querySelectorAll('section');
-
-            const scrollFunction = () => {
+            window.addEventListener('scroll', () => {
+                const sections = document.querySelectorAll('section');
+                const links = document.querySelectorAll('.navelement');
                 let current = '';
-                sections.forEach(section => {
-                    const sectionTop = section.offsetTop;
-                    if (window.pageYOffset >= sectionTop - 120) {
-                        current = section.querySelector('h2').getAttribute('id');
-                    }
+                sections.forEach(s => {
+                    if (window.pageYOffset >= s.offsetTop - 120) current = s.id;
                 });
+                links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === `#${current}`));
+            });
 
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === '#' + current) {
-                        link.classList.add('active');
-                    }
-                });
-            };
-
-            window.addEventListener('scroll', scrollFunction);
-            scrollFunction();
-
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('modal') === 'ordered') {
+            const params = new URLSearchParams(location.search);
+            if (params.get('modal') === 'ordered') {
                 const modal = document.getElementById('order-success-modal');
-                if (modal) modal.classList.remove('hidden');
-
-                document.getElementById('close-order-modal').addEventListener('click', () => {
+                modal.classList.remove('hidden');
+                document.getElementById('close-order-modal').onclick = () => {
                     modal.classList.add('hidden');
-                    const newUrl = window.location.pathname;
-                    window.history.replaceState({}, '', newUrl);
-                });
+                    history.replaceState({}, '', location.pathname);
+                };
             }
         }
 

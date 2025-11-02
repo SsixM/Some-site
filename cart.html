@@ -198,6 +198,78 @@
     </div>
 </div>
 <script>
+    // === ЯЗЫКОВАЯ ПОДДЕРЖКА ===
+    const translations = {
+        ru: {
+            cart: "Корзина",
+            items: "Товары",
+            subtotal: "Товары в заказе:",
+            service_fee: "Обслуживание",
+            table_number: "Номер столика:",
+            total: "Итого к оплате:",
+            add_more: "← Добавить еще",
+            checkout_button: "Перейти к оформлению",
+            order_summary: "Итоги Заказа",
+            payment_method: "Способ оплаты",
+            your_name: "Ваше имя",
+            payment_title: "Выберите способ оплаты",
+            cash: "Наличные/Карта",
+            cash_desc: "Оплата при получении",
+            click: "Click",
+            payme: "Payme",
+            online: "Онлайн оплата",
+            continue: "Продолжить",
+            cancel: "Отмена",
+            checkout_title: "Оформление заказа",
+            name_label: "Имя",
+            phone_label: "Номер телефона",
+            table_label: "Номер столика",
+            confirm: "Подтвердить заказ",
+            close: "Закрыть",
+            phone_error: "Неверный формат номера телефона. Используйте формат: +998 (XX) XXX-XX-XX",
+            server_error: "Ошибка соединения с сервером",
+            order_error: "Ошибка создания заказа",
+            sum: "сўм"
+        },
+        uz: {
+            cart: "Savat",
+            items: "Mahsulotlar",
+            subtotal: "Buyurtmadagi mahsulotlar:",
+            service_fee: "Xizmat",
+            table_number: "Stol raqami:",
+            total: "Jami to'lov:",
+            add_more: "← Yana qo'shish",
+            checkout_button: "Rasmiylashtirishga o'tish",
+            order_summary: "Buyurtma Jami",
+            payment_method: "To'lov usuli",
+            your_name: "Ismingiz",
+            payment_title: "To'lov usulini tanlang",
+            cash: "Naqd/Karta",
+            cash_desc: "Qabul qilganda to'lash",
+            click: "Click",
+            payme: "Payme",
+            online: "Onlayn to'lov",
+            continue: "Davom etish",
+            cancel: "Bekor qilish",
+            checkout_title: "Buyurtma rasmiylashtirish",
+            name_label: "Ism",
+            phone_label: "Telefon raqami",
+            table_label: "Stol raqami",
+            confirm: "Buyurtmani tasdiqlash",
+            close: "Yopish",
+            phone_error: "Telefon raqami formati noto'g'ri. Format: +998 (XX) XXX-XX-XX",
+            server_error: "Server bilan ulanishda xatolik",
+            order_error: "Buyurtma yaratishda xatolik",
+            sum: "so'm"
+        }
+    };
+
+    function t(key) {
+        const lang = localStorage.getItem('language') || 'ru';
+        return translations[lang][key] || key;
+    }
+
+    // === JWT и столик ===
     function decodeJwt(token) {
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
@@ -214,8 +286,12 @@
             return true;
         }
     }
+
     const tableToken = localStorage.getItem('tableNumber');
     let tableNumber = null;
+    let servicePercent = 15;
+    let tableNames = { ru: '', uz: '' }; // кэш названий
+
     if (tableToken && !isTokenExpired(tableToken)) {
         tableNumber = decodeJwt(tableToken);
     }
@@ -224,60 +300,118 @@
         window.location.href = './redirect.html';
     } else {
         document.getElementById('table-number').value = tableNumber;
-        document.getElementById('table-number-display').textContent = tableNumber;
+
+        // === ПОЛУЧИТЬ СТОЛИК С КАСТОМНЫМ % и RU/UZ ===
+        async function loadTableInfo() {
+            try {
+                const response = await fetch('/back/api/tables');
+                const data = await response.json();
+                const table = data.tables.find(t => t.name_ru === tableNumber);
+                if (table) {
+                    servicePercent = table.service_percent;
+                    tableNames.ru = table.name_ru;
+                    tableNames.uz = table.name_uz;
+
+                    // Обновляем в корзине
+                    const lang = localStorage.getItem('language') || 'ru';
+                    document.getElementById('table-number-display').textContent = lang === 'uz' ? table.name_uz : table.name_ru;
+                } else {
+                    tableNames.ru = tableNumber;
+                    tableNames.uz = tableNumber;
+                    document.getElementById('table-number-display').textContent = tableNumber;
+                }
+            } catch (e) {
+                console.error('Failed to load table info:', e);
+                tableNames.ru = tableNumber;
+                tableNames.uz = tableNumber;
+                document.getElementById('table-number-display').textContent = tableNumber;
+            }
+            updateTotals();
+        }
+
+        loadTableInfo();
+
+        // === ОБНОВЛЕНИЕ СТОЛИКА В МОДАЛКЕ ОПЛАТЫ ===
+        function updateTableDisplayInCheckout() {
+            const input = document.getElementById('table-number');
+            const lang = localStorage.getItem('language') || 'ru';
+            input.value = lang === 'uz' ? tableNames.uz : tableNames.ru;
+        }
+
         let selectedPaymentMethod = null;
+
         function createCartItem(item) {
+            const lang = localStorage.getItem('language') || 'ru';
+            const name = lang === 'uz' ? (item.name_uz || item.name_ru) : item.name_ru;
+            const desc = lang === 'uz' ? (item.description_uz || item.description_ru) : item.description_ru;
+
             const div = document.createElement('div');
             div.className = 'flex flex-col p-4 bg-white border border-gray-200 rounded-xl shadow-sm transition duration-150 hover:shadow-lg';
             div.dataset.id = item.id;
+
             const topSection = document.createElement('div');
             topSection.className = 'flex items-start gap-4';
+
             const img = document.createElement('img');
             img.src = item.image || 'src/images/placeholder.jpg';
-            img.alt = item.name;
+            img.alt = name;
             img.className = 'cart-item-image';
             topSection.appendChild(img);
+
             const info = document.createElement('div');
             info.className = 'flex-grow min-w-0';
-            const name = document.createElement('p');
-            name.className = 'cart-item-name mb-1';
-            name.textContent = item.name;
-            info.appendChild(name);
-            const desc = document.createElement('p');
-            desc.className = 'text-[#3b443d]/70 text-sm leading-relaxed line-clamp-2 mb-2';
-            desc.textContent = item.description;
-            info.appendChild(desc);
+
+            const nameEl = document.createElement('p');
+            nameEl.className = 'cart-item-name mb-1';
+            nameEl.textContent = name;
+            info.appendChild(nameEl);
+
+            const descEl = document.createElement('p');
+            descEl.className = 'text-[#3b443d]/70 text-sm leading-relaxed line-clamp-2 mb-2';
+            descEl.textContent = desc;
+            info.appendChild(descEl);
+
             const price = document.createElement('p');
             price.className = 'cart-item-price';
-            price.textContent = `${item.price} сўм`;
+            price.textContent = `${item.price} ${t('sum')}`;
             info.appendChild(price);
+
             topSection.appendChild(info);
             div.appendChild(topSection);
+
             const bottomSection = document.createElement('div');
             bottomSection.className = 'flex items-center justify-between mt-4 pt-4 border-t border-gray-200';
+
             const quantityDiv = document.createElement('div');
             quantityDiv.className = 'flex items-center gap-3 bg-[#597e52]/10 rounded-full px-2 py-1';
+
             const minus = document.createElement('button');
             minus.className = 'cart-quantity-button';
             minus.textContent = '-';
             minus.onclick = () => updateQuantity(item.id, -1);
             quantityDiv.appendChild(minus);
+
             const qtySpan = document.createElement('span');
             qtySpan.className = 'text-lg font-bold text-[#3b443d] min-w-[32px] text-center';
             qtySpan.textContent = item.quantity;
             quantityDiv.appendChild(qtySpan);
+
             const plus = document.createElement('button');
             plus.className = 'cart-quantity-button';
             plus.textContent = '+';
             plus.onclick = () => updateQuantity(item.id, 1);
             quantityDiv.appendChild(plus);
+
             bottomSection.appendChild(quantityDiv);
+
             const rightSection = document.createElement('div');
             rightSection.className = 'flex items-center gap-3';
+
             const totalPrice = document.createElement('p');
             totalPrice.className = 'cart-item-price-total';
-            totalPrice.textContent = `${item.price * item.quantity} сўм`;
+            totalPrice.textContent = `${item.price * item.quantity} ${t('sum')}`;
             rightSection.appendChild(totalPrice);
+
             const removeBtn = document.createElement('button');
             removeBtn.className = 'text-red-500 hover:text-red-700 transition duration-150';
             removeBtn.onclick = () => removeItem(item.id);
@@ -294,17 +428,21 @@
             svg.appendChild(path);
             removeBtn.appendChild(svg);
             rightSection.appendChild(removeBtn);
+
             bottomSection.appendChild(rightSection);
             div.appendChild(bottomSection);
             return div;
         }
+
         function loadCart() {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             const list = document.getElementById('cart-items-list');
             list.innerHTML = '';
             cart.forEach(item => list.appendChild(createCartItem(item)));
             updateTotals();
+            updateLanguage();
         }
+
         function updateQuantity(id, delta) {
             let cart = JSON.parse(localStorage.getItem('cart')) || [];
             const itemIndex = cart.findIndex(i => i.id === id);
@@ -315,31 +453,79 @@
                 loadCart();
             }
         }
+
         function removeItem(id) {
             let cart = JSON.parse(localStorage.getItem('cart')) || [];
             cart = cart.filter(i => i.id !== id);
             localStorage.setItem('cart', JSON.stringify(cart));
             loadCart();
         }
-        // Обновленная функция для расчета и отображения общей суммы с обслуживанием
+
         function updateTotals() {
             const cart = JSON.parse(localStorage.getItem('cart')) || [];
             const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-            // Расчет сбора за обслуживание (15%)
-            const SERVICE_FEE_RATE = 0.15;
-            const serviceFee = Math.round(subtotal * SERVICE_FEE_RATE); // Округляем до целого числа
-
-            // Расчет общей суммы
+            const serviceFee = Math.round(subtotal * (servicePercent / 100));
             const total = subtotal + serviceFee;
 
-            document.getElementById('subtotal').textContent = `${subtotal} сўм`;
-            document.getElementById('service-fee').textContent = `${serviceFee} сўм`; // Отображение сбора за обслуживание
-            document.getElementById('total').textContent = `${total} сўм`;
+            document.getElementById('subtotal').textContent = `${subtotal} ${t('sum')}`;
+            document.getElementById('service-fee').textContent = `${serviceFee} ${t('sum')}`;
+            document.getElementById('total').textContent = `${total} ${t('sum')}`;
             document.getElementById('checkout-button').disabled = cart.length === 0;
+
+            const serviceLabel = document.querySelector('#service-fee').previousElementSibling;
+            serviceLabel.textContent = `${t('service_fee')} (${servicePercent}%):`;
         }
+
+        function updateLanguage() {
+            document.title = t('cart');
+            document.querySelector('h1').textContent = t('cart');
+            document.querySelector('.menu-category-title').textContent = t('items');
+            document.querySelector('.border-b.pb-3').textContent = t('order_summary');
+            document.querySelector('#subtotal').previousElementSibling.textContent = t('subtotal');
+            document.querySelector('#table-number-display').previousElementSibling.textContent = t('table_number');
+            document.querySelector('#total').previousElementSibling.textContent = t('total');
+            document.querySelector('#checkout-button').textContent = t('checkout_button');
+            document.querySelector('a.navelement').textContent = t('add_more');
+
+            const serviceLabel = document.querySelector('#service-fee').previousElementSibling;
+            serviceLabel.textContent = `${t('service_fee')} (${servicePercent}%):`;
+
+            // Обновляем столик в модалке, если открыта
+            if (!document.getElementById('checkout-modal').classList.contains('hidden')) {
+                updateTableDisplayInCheckout();
+            }
+
+            const paymentModal = document.getElementById('payment-modal');
+            if (paymentModal && !paymentModal.classList.contains('hidden')) {
+                paymentModal.querySelector('h2').textContent = t('payment_title');
+                paymentModal.querySelector('[data-payment="cash"] .font-bold').textContent = t('cash');
+                paymentModal.querySelector('[data-payment="cash"] .text-sm').textContent = t('cash_desc');
+                paymentModal.querySelector('[data-payment="click"] .font-bold').textContent = t('click');
+                paymentModal.querySelector('[data-payment="payme"] .font-bold').textContent = t('payme');
+                const onlineTexts = paymentModal.querySelectorAll('[data-payment="click"] .text-sm, [data-payment="payme"] .text-sm');
+                onlineTexts.forEach(p => p.textContent = t('online'));
+                document.getElementById('continue-to-checkout').textContent = t('continue');
+                document.getElementById('close-payment-modal').textContent = t('cancel');
+            }
+
+            const checkoutModal = document.getElementById('checkout-modal');
+            if (checkoutModal && !checkoutModal.classList.contains('hidden')) {
+                checkoutModal.querySelector('h2').textContent = t('checkout_title');
+                checkoutModal.querySelector('label[for="user-name"]').textContent = t('your_name');
+                checkoutModal.querySelector('label[for="user-phone"]').textContent = t('phone_label');
+                checkoutModal.querySelector('label[for="table-number"]').textContent = t('table_label');
+                const paymentLabel = checkoutModal.querySelector('.mb-4 > .block');
+                if (paymentLabel) paymentLabel.textContent = t('payment_method');
+                document.querySelector('#checkout-form button[type="submit"]').textContent = t('confirm');
+                document.getElementById('close-modal').textContent = t('close');
+                updateTableDisplayInCheckout(); // ← КЛЮЧЕВАЯ СТРОКА
+            }
+        }
+
+        // === Модалки ===
         function openPaymentModal() {
             document.getElementById('payment-modal').classList.remove('hidden');
+            updateLanguage();
         }
         function closePaymentModal() {
             document.getElementById('payment-modal').classList.add('hidden');
@@ -350,7 +536,10 @@
         function openCheckoutModal() {
             document.getElementById('payment-modal').classList.add('hidden');
             document.getElementById('checkout-modal').classList.remove('hidden');
-            document.getElementById('selected-payment-display').textContent = selectedPaymentMethod === 'cash' ? 'Наличные/Карта' : selectedPaymentMethod.charAt(0).toUpperCase() + selectedPaymentMethod.slice(1);
+            const paymentText = selectedPaymentMethod === 'cash' ? t('cash') : selectedPaymentMethod.charAt(0).toUpperCase() + selectedPaymentMethod.slice(1);
+            document.getElementById('selected-payment-display').textContent = paymentText;
+            updateLanguage();
+            updateTableDisplayInCheckout(); // ← обновляем при открытии
         }
         function closeCheckoutModal() {
             document.getElementById('checkout-modal').classList.add('hidden');
@@ -358,13 +547,16 @@
             document.getElementById('checkout-form').reset();
             document.getElementById('table-number').value = tableNumber;
         }
+
         function validatePhone(phone) {
             const regex = /^\+998\s\(\d{2}\)\s\d{3}-\d{2}-\d{2}$/;
             return regex.test(phone);
         }
+
         document.getElementById('checkout-button').addEventListener('click', openPaymentModal);
         document.getElementById('close-payment-modal').addEventListener('click', closePaymentModal);
         document.getElementById('close-modal').addEventListener('click', closeCheckoutModal);
+
         document.querySelectorAll('.payment-method-card').forEach(card => {
             card.addEventListener('click', () => {
                 selectedPaymentMethod = card.dataset.payment;
@@ -373,70 +565,106 @@
                 document.getElementById('continue-to-checkout').disabled = false;
             });
         });
-        document.getElementById('continue-to-checkout').addEventListener('click', openCheckoutModal);
-        document.getElementById('checkout-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const phone = formData.get('phone');
-            if (!validatePhone(phone)) {
-                document.getElementById('checkout-message').textContent = 'Неверный формат номера телефона. Используйте формат: +998 (XX) XXX-XX-XX';
-                document.getElementById('checkout-message').classList.add('error-message');
-                document.getElementById('checkout-message').classList.remove('success-message');
-                return;
-            }
-            const data = {
-                user_name: formData.get('user_name'),
-                phone: phone,
-                table_number: tableNumber,
-                payment_method: selectedPaymentMethod,
-                cart: JSON.parse(localStorage.getItem('cart')) || []
-            };
-            try {
-                const response = await fetch('/back/api/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await response.json();
-                const checkoutMessage = document.getElementById('checkout-message');
-                if (response.ok) {
-                    localStorage.setItem('phoneNumber', phone);
-                    localStorage.removeItem('cart');
-                    window.location.href = './index.html?modal=ordered';
-                } else {
-                    checkoutMessage.textContent = result.error || 'Ошибка создания заказа';
-                    checkoutMessage.classList.add('error-message');
-                    checkoutMessage.classList.remove('success-message');
-                }
-            } catch (error) {
-                document.getElementById('checkout-message').textContent = 'Ошибка соединения с сервером';
-                document.getElementById('checkout-message').classList.add('error-message');
-                document.getElementById('checkout-message').classList.remove('success-message');
-            }
-        });
-        document.getElementById('user-phone').addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, ''); // Удаляем все нечисловые символы
-            if (value.length > 12) value = value.slice(0, 12); // Ограничиваем длину до 12 цифр (+998 и 9 цифр номера)
 
+        document.getElementById('continue-to-checkout').addEventListener('click', openCheckoutModal);
+
+document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const phone = formData.get('phone');
+    if (!validatePhone(phone)) {
+        const msg = document.getElementById('checkout-message');
+        msg.textContent = t('phone_error');
+        msg.classList.add('error-message');
+        msg.classList.remove('success-message');
+        return;
+    }
+
+    // === ПОДТЯГИВАЕМ МЕНЮ ДЛЯ НАЗВАНИЙ ===
+    let menuData = { categories: {} };
+    try {
+        const menuResp = await fetch('/back/api/menu');
+        if (menuResp.ok) {
+            menuData = await menuResp.json();
+        }
+    } catch (e) {
+        console.warn('Не удалось загрузить меню для названий блюд', e);
+    }
+
+    // === ДОБАВЛЯЕМ name_ru / name_uz К КОРЗИНЕ ===
+    const rawCart = JSON.parse(localStorage.getItem('cart')) || [];
+    const cartWithNames = rawCart.map(cartItem => {
+        let dish = null;
+        for (const catKey in menuData.categories) {
+            dish = menuData.categories[catKey].items.find(i => i.id === cartItem.id);
+            if (dish) break;
+        }
+        return {
+            id: cartItem.id,
+            quantity: cartItem.quantity,
+            price: cartItem.price,
+            name_ru: dish?.name_ru || 'Неизвестно',
+            name_uz: dish?.name_uz || 'Noma\'lum'
+        };
+    });
+
+    const data = {
+        user_name: formData.get('user_name'),
+        phone: phone,
+        table_number: tableNumber, // RU — как в JWT
+        payment_method: selectedPaymentMethod,
+        cart: cartWithNames
+    };
+
+    try {
+        const response = await fetch('/back/api/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        const checkoutMessage = document.getElementById('checkout-message');
+        if (response.ok) {
+            localStorage.setItem('phoneNumber', phone);
+            localStorage.removeItem('cart');
+            window.location.href = './index.html?modal=ordered';
+        } else {
+            checkoutMessage.textContent = result.error || t('order_error');
+            checkoutMessage.classList.add('error-message');
+            checkoutMessage.classList.remove('success-message');
+        }
+    } catch (error) {
+        const msg = document.getElementById('checkout-message');
+        msg.textContent = t('server_error');
+        msg.classList.add('error-message');
+        msg.classList.remove('success-message');
+    }
+});
+        document.getElementById('user-phone').addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 12) value = value.slice(0, 12);
             let formatted = '';
             if (value.length === 0) {
-                e.target.value = ''; // Пустое поле, если ничего не введено
+                e.target.value = '';
                 return;
             }
-
-            // Добавляем префикс +998, если он еще не введен
             formatted = '+998';
             value = value.startsWith('998') ? value.slice(3) : value;
-
-            // Форматируем оставшуюся часть номера
             if (value.length > 0) formatted += ` (${value.slice(0, 2)})`;
             if (value.length > 2) formatted += ` ${value.slice(2, 5)}`;
             if (value.length > 5) formatted += `-${value.slice(5, 7)}`;
             if (value.length > 7) formatted += `-${value.slice(7, 9)}`;
-
             e.target.value = formatted;
         });
+
         loadCart();
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'language') {
+                loadTableInfo();
+                updateLanguage();
+            }
+        });
     }
 </script>
 </body>
